@@ -34,6 +34,18 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [screen])
 
+  function startFresh() {
+    if ((cards.length > 0 || color || keyword || story) && !window.confirm('今の作品と入力した文章を消して、はじめから作りますか？残したい作品は、先に「つづきから」で戻って画像保存してください。')) return
+    setCards([])
+    setColor(null)
+    setKeyword(null)
+    setSelectedField(null)
+    setStory('')
+    setShowWords(true)
+    resumeScreen.current = null
+    setScreen('colors')
+  }
+
   function selectColor(nextColor: PaletteColor) {
     if (color?.key !== nextColor.key) setKeyword(null)
     setColor(nextColor)
@@ -69,9 +81,12 @@ export default function App() {
         <p className="eyebrow">A MOMENT FOR YOURSELF</p>
         <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
         <p className="description">今、気になる色と言葉を選び、自由に置いてみる。<br className="desktop-break" />正解はありません。あなただけのストーリーを、ここから。</p>
-        <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
-          {resumeScreen.current ? 'つづきから' : 'はじめる'}<span aria-hidden="true">↗</span>
-        </button>
+        <div className="home-actions">
+          <button type="button" onClick={startFresh}>はじめから<span aria-hidden="true">↗</span></button>
+          {resumeScreen.current && <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
+            つづきから<span aria-hidden="true">→</span>
+          </button>}
+        </div>
         <p className="status">色と言葉を、その時の感覚で。</p>
       </section> : screen === 'fields' ? <section className="selection field-selection" aria-labelledby="field-choice-title">
         <nav className="selection-nav" aria-label="画面の移動">
