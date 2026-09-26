@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" fill="none">
+<title>Mandala palette — layered floral field</title>
+<desc>大きな淡い八枚の花びらと中央の曼荼羅を背景に、三つの小花、短い曲線、点がゆるい三角形を描く配置フィールド。</desc>
+<defs>
+  <path id="large-petal" d="M0 0 C-132-111-112-302 0-433 C112-302 132-111 0 0Z"/>
+  <path id="small-petal" d="M0 0 C-13-12-15-30 0-40 C15-30 13-12 0 0Z"/>
+  <path id="core-petal" d="M0-38 C-21-63-19-106 0-120 C19-106 21-63 0-38Z"/>
+  <g id="flower" stroke-width="1" stroke-linejoin="round">
+
+<use href="#small-petal" transform="rotate(0)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".5"/>
+<use href="#small-petal" transform="rotate(60)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".5"/>
+<use href="#small-petal" transform="rotate(120)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".5"/>
+<use href="#small-petal" transform="rotate(180)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".5"/>
+<use href="#small-petal" transform="rotate(240)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".5"/>
+<use href="#small-petal" transform="rotate(300)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".5"/>
+<circle r="6" fill="white" stroke="#D0BCAE"/><circle r="2.2" fill="#B6A4C5" stroke="none"/></g>
+<!-- A loose S curve, reused along each side rather than enclosing any slot. -->
+<path id="curl" d="M-52 0 C-40-14-26-15-20-3 C-11 15-34 21-32 8 C-29-8-2-7 10 3 C24 16 46 14 54-3"/>
+</defs>
+<g id="background" display="none"><rect width="1000" height="1000" fill="white"/></g>
+<g id="background-mandala" transform="translate(500 520)" stroke-linejoin="round">
+  <g id="outer-petals" stroke="#C6C2CE" stroke-width="1.15" opacity=".34">
+
+<use href="#large-petal" transform="rotate(0)"/>
+<use href="#large-petal" transform="rotate(45)"/>
+<use href="#large-petal" transform="rotate(90)"/>
+<use href="#large-petal" transform="rotate(135)"/>
+<use href="#large-petal" transform="rotate(180)"/>
+<use href="#large-petal" transform="rotate(225)"/>
+<use href="#large-petal" transform="rotate(270)"/>
+<use href="#large-petal" transform="rotate(315)"/>
+</g>
+<g id="inner-petals" stroke="#BCB7C8" stroke-width=".95" opacity=".33">
+
+<use href="#core-petal" transform="rotate(0.0)"/>
+<use href="#core-petal" transform="rotate(22.5)"/>
+<use href="#core-petal" transform="rotate(45.0)"/>
+<use href="#core-petal" transform="rotate(67.5)"/>
+<use href="#core-petal" transform="rotate(90.0)"/>
+<use href="#core-petal" transform="rotate(112.5)"/>
+<use href="#core-petal" transform="rotate(135.0)"/>
+<use href="#core-petal" transform="rotate(157.5)"/>
+<use href="#core-petal" transform="rotate(180.0)"/>
+<use href="#core-petal" transform="rotate(202.5)"/>
+<use href="#core-petal" transform="rotate(225.0)"/>
+<use href="#core-petal" transform="rotate(247.5)"/>
+<use href="#core-petal" transform="rotate(270.0)"/>
+<use href="#core-petal" transform="rotate(292.5)"/>
+<use href="#core-petal" transform="rotate(315.0)"/>
+<use href="#core-petal" transform="rotate(337.5)"/>
+<circle r="88"/><circle r="54"/>
+<use href="#core-petal" transform="rotate(15) scale(.57)"/>
+<use href="#core-petal" transform="rotate(45) scale(.57)"/>
+<use href="#core-petal" transform="rotate(75) scale(.57)"/>
+<use href="#core-petal" transform="rotate(105) scale(.57)"/>
+<use href="#core-petal" transform="rotate(135) scale(.57)"/>
+<use href="#core-petal" transform="rotate(165) scale(.57)"/>
+<use href="#core-petal" transform="rotate(195) scale(.57)"/>
+<use href="#core-petal" transform="rotate(225) scale(.57)"/>
+<use href="#core-petal" transform="rotate(255) scale(.57)"/>
+<use href="#core-petal" transform="rotate(285) scale(.57)"/>
+<use href="#core-petal" transform="rotate(315) scale(.57)"/>
+<use href="#core-petal" transform="rotate(345) scale(.57)"/>
+<circle r="21"/></g></g>
+<g id="guide" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round">
+  <g id="left-flow">
+    <use href="#curl" transform="translate(400 280) rotate(124)" stroke="#ADBAD0"/>
+    <use href="#curl" transform="translate(319 443) rotate(111)" stroke="#BCA9C9"/>
+    <use href="#curl" transform="translate(250 633) rotate(108)" stroke="#CBB5A6"/>
+  </g>
+  <g id="right-flow">
+    <use href="#curl" transform="translate(639 280) rotate(52)" stroke="#CBB5A6"/>
+    <use href="#curl" transform="translate(721 450) rotate(72)" stroke="#ADBAD0"/>
+    <use href="#curl" transform="translate(778 641) rotate(70)" stroke="#BCA9C9"/>
+  </g>
+  <g id="base-flow">
+    <use href="#curl" transform="translate(383 794) rotate(5)" stroke="#BCA9C9"/>
+    <use href="#curl" transform="translate(624 789) rotate(-7)" stroke="#CBB5A6"/>
+  </g>
+</g>
+<g id="ornaments">
+  <g id="top-flower" transform="translate(500 184)"><use href="#flower"/></g>
+  <g id="left-flower" transform="translate(211 782) rotate(-14)"><use href="#flower"/></g>
+  <g id="right-flower" transform="translate(790 780) rotate(16)"><use href="#flower"/></g>
+</g>
+<g id="points" stroke-width="1.15">
+
+<g transform="translate(446 225)"><circle r="3.5" stroke="#B5A3C7"/><circle cx="7" cy="-5" r="1.5" fill="#B5A3C7"/></g>
+<g transform="translate(575 222)"><circle r="3.5" stroke="#CDB9AA"/><circle cx="7" cy="-5" r="1.5" fill="#CDB9AA"/></g>
+<g transform="translate(355 355)"><circle r="3.5" stroke="#AABFD2"/><circle cx="7" cy="-5" r="1.5" fill="#AABFD2"/></g>
+<g transform="translate(286 538)"><circle r="3.5" stroke="#B5A3C7"/><circle cx="7" cy="-5" r="1.5" fill="#B5A3C7"/></g>
+<g transform="translate(226 721)"><circle r="3.5" stroke="#CDB9AA"/><circle cx="7" cy="-5" r="1.5" fill="#CDB9AA"/></g>
+<g transform="translate(294 788)"><circle r="3.5" stroke="#AABFD2"/><circle cx="7" cy="-5" r="1.5" fill="#AABFD2"/></g>
+<g transform="translate(516 793)"><circle r="3.5" stroke="#B5A3C7"/><circle cx="7" cy="-5" r="1.5" fill="#B5A3C7"/></g>
+<g transform="translate(703 785)"><circle r="3.5" stroke="#CDB9AA"/><circle cx="7" cy="-5" r="1.5" fill="#CDB9AA"/></g>
+<g transform="translate(812 722)"><circle r="3.5" stroke="#AABFD2"/><circle cx="7" cy="-5" r="1.5" fill="#AABFD2"/></g>
+<g transform="translate(752 552)"><circle r="3.5" stroke="#B5A3C7"/><circle cx="7" cy="-5" r="1.5" fill="#B5A3C7"/></g>
+<g transform="translate(692 364)"><circle r="3.5" stroke="#CDB9AA"/><circle cx="7" cy="-5" r="1.5" fill="#CDB9AA"/></g>
+</g>
+</svg>
