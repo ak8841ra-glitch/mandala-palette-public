@@ -87,3 +87,7 @@ h1:focus { outline: none; }
 .story-editor p { color: #bdc9d8; font-size: 12px; line-height: 1.8; }
 .reflection a { color: #b8dfe8; }
 button:disabled { opacity: .45; cursor: not-allowed; }
+
+.brand-home { min-height: 44px; padding: 0; border: 0; background: transparent; color: inherit; justify-content: flex-start; gap: 0; border-radius: 4px; }
+.brand-home:hover { background: transparent; opacity: .8; }
+.return-home-action { margin: 28px 0; }

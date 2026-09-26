@@ -12,6 +12,11 @@ const descriptions = ['小花が三角形に広がる模様', '小花が横一�
 
 export default function App() {
   const [screen, setScreen] = useState<'home' | 'colors' | 'keywords' | 'fields' | 'field' | 'reflection'>('home')
+  const resumeScreen = useRef<typeof screen | null>(null)
+  function goHome() {
+    if (screen !== 'home') resumeScreen.current = screen
+    setScreen('home')
+  }
   const [story, setStory] = useState('')
   const [showWords, setShowWords] = useState(true)
   const [selectedField, setSelectedField] = useState<Field | null>(null)
@@ -48,7 +53,7 @@ export default function App() {
 
   return (
     <main className="page">
-      <header className="brand">曼荼羅<span>palette</span></header>
+      <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
       {screen === 'home' ? <section className="intro" aria-labelledby="title">
         <div className="mandala" aria-hidden="true">
           <svg viewBox="0 0 400 400" fill="none">
@@ -64,8 +69,8 @@ export default function App() {
         <p className="eyebrow">A MOMENT FOR YOURSELF</p>
         <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
         <p className="description">今、気になる色と言葉を選び、自由に置いてみる。<br className="desktop-break" />正解はありません。あなただけのストーリーを、ここから。</p>
-        <button type="button" onClick={() => setScreen('colors')}>
-          はじめる<span aria-hidden="true">↗</span>
+        <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
+          {resumeScreen.current ? 'つづきから' : 'はじめる'}<span aria-hidden="true">↗</span>
         </button>
         <p className="status">色と言葉を、その時の感覚で。</p>
       </section> : screen === 'fields' ? <section className="selection field-selection" aria-labelledby="field-choice-title">
@@ -85,7 +90,7 @@ export default function App() {
             <img src={`${import.meta.env.BASE_URL}assets/field-${field}.svg`} alt={descriptions[index]} draggable={false} />
           </button>)}
         </div>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} story={story} onStory={setStory} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} /> : screen === 'field' ? <MandalaField onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
+      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} story={story} onStory={setStory} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
         setColor(null); setKeyword(null); setScreen('colors')
       }} /> : <section className="selection" aria-labelledby="selection-title">
         <nav className="selection-nav" aria-label="画面の移動">

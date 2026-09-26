@@ -24,9 +24,9 @@ async function loadImage(src: string) {
   return image
 }
 
-export default function Reflection({ cards, artwork, story, onStory, showWords, onShowWords, onBack }: {
+export default function Reflection({ cards, artwork, story, onStory, showWords, onShowWords, onBack, onHome }: {
   cards: PlacedCard[]; artwork: string; story: string; onStory: (text: string) => void
-  showWords: boolean; onShowWords: (show: boolean) => void; onBack: () => void
+  showWords: boolean; onShowWords: (show: boolean) => void; onBack: () => void; onHome: () => void
 }) {
   const [preview, setPreview] = useState('')
   const [error, setError] = useState('')
@@ -107,6 +107,7 @@ export default function Reflection({ cards, artwork, story, onStory, showWords, 
     </div>
     <button type="button" disabled={!preview || !story.trim() || busy} onClick={save}>{busy ? '画像を作っています…' : '曼荼羅とストーリーを画像で保存'}</button>
     <p role="status">{download && <a href={download} download="mandala-story.png">保存画像をダウンロード</a>}</p>
+    <div className="return-home-action"><button type="button" onClick={onHome}>トップへ戻る</button></div>
     {error && <p role="alert">{error}</p>}
     <p className="preview-note">入力内容は再読み込みすると消えます。書き終えたら画像で保存してください。</p>
   </section>
