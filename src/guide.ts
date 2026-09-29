@@ -11,7 +11,8 @@ export const THEMES: readonly Theme[] = [
 ]
 
 // One shared mandala field; the placement guide drawn over it is chosen separately.
-export const GUIDES = ['free', 'triangle', 'horizontal', 'none'] as const
+// ①②③ comes first: it is the easiest guide to start with.
+export const GUIDES = ['triangle', 'free', 'horizontal', 'none'] as const
 export type Guide = typeof GUIDES[number]
 
 // label names the guide on its button; lead is the one line shown while placing.

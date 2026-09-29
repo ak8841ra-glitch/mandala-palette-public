@@ -28,9 +28,8 @@ function FieldGuide({ guide }: { guide: Guide }) {
     </g>)}
   </svg>
   if (guide === 'horizontal') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
-    <path d="M12 30 H88 M85 28 L88 30 L85 32" />
-    {[20, 50, 80].map(x => <path key={x} d={`M${x} 33 V92`} />)}
-    <text x="20" y="26">過去</text><text x="50" y="26">現在</text><text x="80" y="26">未来</text>
+    <path d="M8 50 H92 M89 48 L92 50 L89 52" />
+    <text x="20" y="44">過去</text><text x="50" y="44">現在</text><text x="80" y="44">未来</text>
   </svg>
   return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
     {[14, 28, 42].map(r => <circle key={r} cx="50" cy="50" r={r} />)}

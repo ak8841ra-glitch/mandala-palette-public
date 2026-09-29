@@ -1,152 +1,125 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" fill="none" stroke-linecap="round" stroke-linejoin="round">
 <title>Mandala palette — shared mandala field</title>
-<desc>淡い同心円と花びらが中心から外へ広がる、共通の配置フィールド。ガイドを重ねても邪魔にならないよう、線は細く控えめにしている。</desc>
+<desc>線だけで描いた共通の配置フィールド。中心からの放射線、過去から未来へ続く横線、3つの点を結ぶ三角が、花の模様の中に控えめに溶け込んでいる。</desc>
 <defs>
-  <path id="outer-petal" d="M0 0 C-22-20-24-52 0-70 C24-52 22-20 0 0Z"/>
-  <path id="mid-petal" d="M0 0 C-70-70-62-170 0-230 C62-170 70-70 0 0Z"/>
-  <path id="inner-petal" d="M0 0 C-16-16-17-40 0-54 C17-40 16-16 0 0Z"/>
+  <path id="outer-petal" d="M0 0 C-20-18-22-46 0-62 C22-46 20-18 0 0Z"/>
+  <path id="mid-petal" d="M0 0 C-58-62-52-150 0-200 C52-150 58-62 0 0Z"/>
+  <path id="inner-petal" d="M0 0 C-14-14-15-36 0-48 C15-36 14-14 0 0Z"/>
 </defs>
-<g transform="translate(500 500)" stroke-width="1.1" stroke-linejoin="round">
-  <circle r="455" stroke="#B6A4C5" stroke-opacity=".45"/>
-  <circle r="440" stroke="#B5C7D4" stroke-opacity=".5"/>
-  <use href="#outer-petal" transform="rotate(0.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(11.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(22.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(33.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(45.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(56.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(67.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(78.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(90.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(101.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(112.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(123.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(135.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(146.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(157.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(168.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(180.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(191.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(202.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(213.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(225.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(236.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(247.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(258.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(270.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(281.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(292.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(303.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(315.00) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(326.25) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(337.50) translate(0 -368)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".45" stroke-opacity=".7"/>
-  <use href="#outer-petal" transform="rotate(348.75) translate(0 -368)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".45" stroke-opacity=".7"/>
-  <circle cx="0.0" cy="-350.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="34.3" cy="-348.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="68.3" cy="-343.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="101.6" cy="-334.9" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="133.9" cy="-323.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="165.0" cy="-308.7" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="194.4" cy="-291.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="222.0" cy="-270.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="247.5" cy="-247.5" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="270.6" cy="-222.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="291.0" cy="-194.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="308.7" cy="-165.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="323.4" cy="-133.9" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="334.9" cy="-101.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="343.3" cy="-68.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="348.3" cy="-34.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="350.0" cy="-0.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="348.3" cy="34.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="343.3" cy="68.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="334.9" cy="101.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="323.4" cy="133.9" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="308.7" cy="165.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="291.0" cy="194.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="270.6" cy="222.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="247.5" cy="247.5" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="222.0" cy="270.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="194.4" cy="291.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="165.0" cy="308.7" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="133.9" cy="323.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="101.6" cy="334.9" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="68.3" cy="343.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="34.3" cy="348.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="0.0" cy="350.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-34.3" cy="348.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-68.3" cy="343.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-101.6" cy="334.9" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-133.9" cy="323.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-165.0" cy="308.7" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-194.4" cy="291.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-222.0" cy="270.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-247.5" cy="247.5" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-270.6" cy="222.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-291.0" cy="194.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-308.7" cy="165.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-323.4" cy="133.9" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-334.9" cy="101.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-343.3" cy="68.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-348.3" cy="34.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-350.0" cy="0.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-348.3" cy="-34.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-343.3" cy="-68.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-334.9" cy="-101.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-323.4" cy="-133.9" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-308.7" cy="-165.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-291.0" cy="-194.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-270.6" cy="-222.0" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-247.5" cy="-247.5" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-222.0" cy="-270.6" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-194.4" cy="-291.0" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-165.0" cy="-308.7" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-133.9" cy="-323.4" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-101.6" cy="-334.9" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle cx="-68.3" cy="-343.3" r="1.4" fill="#B6A4C5" fill-opacity=".7"/>
-  <circle cx="-34.3" cy="-348.3" r="2.2" fill="#CBB5A6" fill-opacity=".7"/>
-  <circle r="330" stroke="#CBB5A6" stroke-opacity=".45" stroke-dasharray="2 7"/>
-  <use href="#mid-petal" transform="rotate(15) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(45) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(75) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(105) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(135) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(165) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(195) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(225) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(255) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(285) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(315) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(345) translate(0 -80)" stroke="#B5C7D4" fill="#EDF2F5" fill-opacity=".35" stroke-opacity=".55"/>
-  <use href="#mid-petal" transform="rotate(0) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(30) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(60) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(90) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(120) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(150) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(180) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(210) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(240) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(270) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(300) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <use href="#mid-petal" transform="rotate(330) translate(0 -80)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".4" stroke-opacity=".6"/>
-  <circle r="92" fill="white" stroke="#CBB5A6" stroke-opacity=".6"/>
-  <use href="#inner-petal" transform="rotate(0.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(22.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(45.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(67.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(90.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(112.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(135.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(157.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(180.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(202.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(225.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(247.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(270.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(292.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(315.0) translate(0 -26)" stroke="#B6A4C5" fill="#F1ECF5" fill-opacity=".6" stroke-opacity=".8"/>
-  <use href="#inner-petal" transform="rotate(337.5) translate(0 -26)" stroke="#CBB5A6" fill="#F6F0EB" fill-opacity=".6" stroke-opacity=".8"/>
-  <circle r="14" fill="white" stroke="#CBB5A6"/><circle r="5" fill="#B6A4C5"/>
+<g transform="translate(500 500)">
+  <circle r="455" stroke="#B6A4C5" stroke-opacity=".5" stroke-width="1.2"/>
+  <circle r="442" stroke="#A9BCCB" stroke-opacity=".45"/>
+  <g stroke="#B6A4C5" stroke-opacity=".55">
+    <use href="#outer-petal" transform="rotate(0.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(11.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(22.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(33.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(45.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(56.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(67.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(78.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(90.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(101.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(112.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(123.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(135.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(146.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(157.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(168.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(180.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(191.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(202.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(213.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(225.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(236.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(247.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(258.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(270.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(281.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(292.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(303.75) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(315.00) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(326.25) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(337.50) translate(0 -372)"/>
+    <use href="#outer-petal" transform="rotate(348.75) translate(0 -372)"/>
+  </g>
+  <circle r="330" stroke="#C9B09E" stroke-opacity=".5" stroke-dasharray="1.5 8"/>
+  <g stroke="#A9BCCB" stroke-width=".9">
+    <path d="M0.0 -104.0 L0.0 -318.0" stroke-opacity=".45"/>
+    <path d="M38.8 -144.9 L77.6 -289.8" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M52.0 -90.1 L159.0 -275.4" stroke-opacity=".45"/>
+    <path d="M106.1 -106.1 L212.1 -212.1" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M90.1 -52.0 L275.4 -159.0" stroke-opacity=".45"/>
+    <path d="M144.9 -38.8 L289.8 -77.6" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M104.0 -0.0 L318.0 -0.0" stroke-opacity=".45"/>
+    <path d="M144.9 38.8 L289.8 77.6" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M90.1 52.0 L275.4 159.0" stroke-opacity=".45"/>
+    <path d="M106.1 106.1 L212.1 212.1" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M52.0 90.1 L159.0 275.4" stroke-opacity=".45"/>
+    <path d="M38.8 144.9 L77.6 289.8" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M0.0 104.0 L0.0 318.0" stroke-opacity=".45"/>
+    <path d="M-38.8 144.9 L-77.6 289.8" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M-52.0 90.1 L-159.0 275.4" stroke-opacity=".45"/>
+    <path d="M-106.1 106.1 L-212.1 212.1" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M-90.1 52.0 L-275.4 159.0" stroke-opacity=".45"/>
+    <path d="M-144.9 38.8 L-289.8 77.6" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M-104.0 0.0 L-318.0 0.0" stroke-opacity=".45"/>
+    <path d="M-144.9 -38.8 L-289.8 -77.6" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M-90.1 -52.0 L-275.4 -159.0" stroke-opacity=".45"/>
+    <path d="M-106.1 -106.1 L-212.1 -212.1" stroke-opacity=".28" stroke-dasharray="2 6"/>
+    <path d="M-52.0 -90.1 L-159.0 -275.4" stroke-opacity=".45"/>
+    <path d="M-38.8 -144.9 L-77.6 -289.8" stroke-opacity=".28" stroke-dasharray="2 6"/>
+  </g>
+  <g stroke="#B6A4C5" stroke-opacity=".5">
+    <use href="#mid-petal" transform="rotate(15) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(45) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(75) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(105) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(135) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(165) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(195) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(225) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(255) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(285) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(315) translate(0 -96)"/>
+    <use href="#mid-petal" transform="rotate(345) translate(0 -96)"/>
+  </g>
+</g>
+<g stroke="#C9B09E" stroke-opacity=".75">
+  <path d="M70 500 H404 M596 500 H930"/>
+  <path d="M200 490 L210 500 L200 510 L190 500Z"/>
+  <path d="M800 490 L810 500 L800 510 L790 500Z"/>
+</g>
+<g stroke="#A9BCCB">
+  <path d="M220 760 L780 760 L500 220Z" stroke-opacity=".5" stroke-dasharray="6 7"/>
+  <circle cx="220" cy="760" r="16" stroke-opacity=".6"/>
+  <circle cx="220" cy="760" r="5" stroke="#B6A4C5" stroke-opacity=".8"/>
+  <circle cx="780" cy="760" r="16" stroke-opacity=".6"/>
+  <circle cx="780" cy="760" r="5" stroke="#B6A4C5" stroke-opacity=".8"/>
+  <circle cx="500" cy="220" r="16" stroke-opacity=".6"/>
+  <circle cx="500" cy="220" r="5" stroke="#B6A4C5" stroke-opacity=".8"/>
+</g>
+<g transform="translate(500 500)">
+  <circle r="96" stroke="#C9B09E" stroke-opacity=".6" stroke-width="1.1"/>
+  <g stroke="#B6A4C5" stroke-opacity=".7">
+    <use href="#inner-petal" transform="rotate(0.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(22.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(45.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(67.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(90.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(112.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(135.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(157.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(180.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(202.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(225.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(247.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(270.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(292.5) translate(0 -30)" stroke="#C9B09E"/>
+    <use href="#inner-petal" transform="rotate(315.0) translate(0 -30)"/>
+    <use href="#inner-petal" transform="rotate(337.5) translate(0 -30)" stroke="#C9B09E"/>
+  </g>
+  <circle r="16" stroke="#C9B09E" stroke-opacity=".8"/>
+  <circle r="5" stroke="#B6A4C5"/>
 </g>
 </svg>

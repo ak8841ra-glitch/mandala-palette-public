@@ -44,7 +44,7 @@ export default function App() {
     setScreen('home')
   }
   const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
-  const [guide, setGuide] = useState<Guide>(GUIDES.includes(draft.guide as Guide) ? draft.guide! : 'free')
+  const [guide, setGuide] = useState<Guide>(GUIDES.includes(draft.guide as Guide) ? draft.guide! : 'triangle')
   const [notes, setNotes] = useState<Notes>(draft.notes ?? emptyNotes())
   const [showWords, setShowWords] = useState(draft.showWords ?? true)
   const [cards, setCards] = useState<PlacedCard[]>(draft.cards ?? [])
@@ -76,7 +76,7 @@ export default function App() {
     setOpen([])
     setNotes(emptyNotes())
     setTheme(null)
-    setGuide('free')
+    setGuide('triangle')
     setShowWords(true)
     setConfirmFresh(false)
     setResumeScreen(null)
