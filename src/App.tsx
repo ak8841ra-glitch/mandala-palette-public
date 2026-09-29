@@ -86,14 +86,14 @@ export default function App() {
         </div>
         <p className="eyebrow">A MOMENT FOR YOURSELF</p>
         <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
-        <p className="description">今、気になる色と言葉を選び、自由に置いてみる。<br className="desktop-break" />正解はありません。あなただけのストーリーを、ここから。</p>
+        <p className="lead">色と言葉を選んで、置いて、眺める。</p>
+        <p className="hint">正解はありません。</p>
         <div className="home-actions">
           <button type="button" onClick={startFresh}>はじめから<span aria-hidden="true">↗</span></button>
           {resumeScreen.current && <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
             つづきから<span aria-hidden="true">→</span>
           </button>}
         </div>
-        <p className="status">色と言葉を、その時の感覚で。</p>
       </section> : screen === 'fields' ? <section className="selection field-selection" aria-labelledby="field-choice-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => {
@@ -103,7 +103,8 @@ export default function App() {
           <span className="step-label">04 / フィールドを選ぶ</span>
         </nav>
         <h1 ref={heading} tabIndex={-1} id="field-choice-title">どの模様に、置いてみる？</h1>
-        <p className="description">気になる画像を選んでください。<br />どの模様でも、好きな場所に自由に置けます。</p>
+        <p className="lead">気になる模様をひとつ。</p>
+        <p className="hint">どの模様でも、自由に置けます。</p>
         <div className="field-options">
           {fields.map((field, index) => <button key={field} type="button" className="field-option"
             aria-label={`${descriptions[index]}を選ぶ`} aria-pressed={selectedField === field}
@@ -122,7 +123,7 @@ export default function App() {
         </nav>
         <p className="eyebrow">CHOOSE YOUR THEME</p>
         <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
-        <p className="description">テーマを決めると、色や言葉を選ぶときの手がかりになります。<br className="desktop-break" />決めずに、自由に始めても大丈夫です。</p>
+        <p className="lead">決めずに始めても大丈夫。</p>
         <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
           {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
             aria-pressed={theme?.id === item.id}
@@ -142,7 +143,7 @@ export default function App() {
         <h1 ref={heading} tabIndex={-1} id="selection-title">
           {screen === 'colors' ? '今、気になる色は？' : '今、心にとまる言葉は？'}
         </h1>
-        <p className="description">{screen === 'colors' ? `${theme?.prompt ? `${theme.prompt}、` : ''}直感で、ひとつ選んでみてください。` : '12の言葉から、気になるひとつを選んでください。'}</p>
+        <p className="lead">{screen === 'colors' ? `${theme?.prompt ? `${theme.prompt}、` : ''}直感でひとつ。` : '気になる言葉をひとつ。'}</p>
         {screen === 'colors' ? (
           <div className="color-wheel" role="group" aria-label="色を1つ選ぶ">
             <img src={`${import.meta.env.BASE_URL}assets/color-wheel.png`} width="2000" height="2000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
@@ -166,7 +167,7 @@ export default function App() {
             <div className="selection-summary">
               {keyword ? <SelectedCard key={keyword.id} keyword={keyword}
                 originalWord={keywordsFor(color).find(item => item.id === keyword.id)!.word}
-                onChange={setKeyword} onPlace={placeCard} /> : <p>言葉を選ぶと、ここにカードが表示されます。</p>}
+                onChange={setKeyword} onPlace={placeCard} /> : <p className="hint">選んだ言葉が、ここに表示されます。</p>}
             </div>
           </>
         )}

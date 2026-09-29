@@ -97,7 +97,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
     <p className="eyebrow">MAKE YOUR OWN SPACE</p>
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
-    <p className="description" id="field-help">{showGuide ? FIELD_GUIDES[fieldType] : '丸いカードを、好きな場所へ動かしてみてください。'}<br />重ねても、何度動かしても大丈夫です。</p>
+    <p className="lead" id="field-help">{showGuide ? FIELD_GUIDES[fieldType] : '好きな場所へ、自由に'}</p>
     <div className="layout-switch">
       <button type="button" aria-pressed={showGuide} onClick={() => onShowGuide(!showGuide)}>
         配置ガイド：{showGuide ? '表示中' : 'かくしています'}
@@ -148,6 +148,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
         }}>削除</button>
         </div>
       </div>}
+      {!selected && <p className="hint">カードを選ぶと、大きさや重なりを変えられます</p>}
     </div>
     <div className="delete-feedback" role="status">
       {deleted && <><span>「{deleted.card.word}」を削除しました。</span>
@@ -164,11 +165,18 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
           requestAnimationFrame(() => document.getElementById(`card-${restored.instanceId}`)?.focus({ preventScroll: true }))
         }}>元に戻す</button></>}
     </div>
-    <p className="field-meaning">大きさ＝大切さ　色＝感覚　置く場所にも意味をこめて<br /><span>決まりではありません。言葉以外でも、表してみてください。</span></p>
-    <p className="field-hint">カードを選ぶと、大きさ・重なりの順番の変更や、削除ができます。<br />指やマウスでドラッグできます。キーボードではカードを選び、矢印キーで移動できます。</p>
+    <details className="tips">
+      <summary>置き方のヒント</summary>
+      <ul>
+        <li>大きさ＝大切さ、色＝感覚。置く場所にも意味をこめられます（決まりではありません）</li>
+        <li>カードを選ぶと、大きさ・重なり・削除を変えられます</li>
+        <li>重ねても、何度動かしても大丈夫です</li>
+        <li>キーボードでは、カードを選んで矢印キーで移動できます</li>
+      </ul>
+    </details>
     <div className="field-actions"><button type="button" onClick={onAdd}>もう1枚追加 <span aria-hidden="true">＋</span></button>
     <button type="button" className="back-button" onClick={onChangeField}>フィールドを選び直す</button></div>
     <div className="place-action"><button type="button" disabled={!cards.length} onClick={onComplete}>完成 →</button></div>
-    <p className="preview-note">再読み込みすると配置はリセットされます。</p>
+    <p className="hint">再読み込みすると配置はリセットされます。</p>
   </section>
 }

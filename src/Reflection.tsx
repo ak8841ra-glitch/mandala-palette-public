@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { PlacedCard } from './MandalaField'
-import { QUESTIONS, TRIANGLE_SPOTS } from './guide'
+import { QUESTIONS, TRIANGLE_SPOTS, fullQuestion } from './guide'
 import type { Field, Notes, Theme } from './guide'
 
 const font = '"Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif'
@@ -117,7 +117,7 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
       }] : []
       const blocks = [...spots, ...answered.map(question => {
         measure.font = `25px ${font}`
-        const asked = lines(measure, question.text, 1080)
+        const asked = lines(measure, fullQuestion(question), 1080)
         measure.font = `28px ${font}`
         return { asked, answer: lines(measure, notes.answers[question.id]!.trim(), 1080) }
       })]
@@ -174,7 +174,8 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
 
     {field === 'triangle' && <div className="spot-meanings">
       <h2>三角形の3つの場所</h2>
-      <p>{theme && theme.id !== 'free' ? `テーマ「${theme.label}」に重ねて、` : ''}置いた場所に、こんな見方をあててみると…。<br />何の姿として眺めるかは、あなたが決めてください。当てはまらなくても大丈夫です。</p>
+      <p className="lead">{theme && theme.id !== 'free' ? `「${theme.label}」に重ねて` : 'こんな見方も'}、眺めてみると…</p>
+      <p className="hint">何の姿として見るかは、あなた次第。当てはまらなくても大丈夫です。</p>
       <ul>
         {TRIANGLE_SPOTS.map(spot => {
           const words = wordsAt(cards, spot)
@@ -189,7 +190,8 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
 
     <div className="story-editor">
       <h2>眺めて、問いかけてみる</h2>
-      <p>気になる問いだけ選んでみてください。全部でなくて大丈夫です。<br />はっきりした答えでなくても、ぼんやりした感じや、ひと言だけでも。<br />言葉にせず、眺めるだけでもかまいません。</p>
+      <p className="lead">気になる問いだけ、選んでみる。</p>
+      <p className="hint">ひと言でも、答えずに眺めるだけでも大丈夫です。</p>
       <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
         {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
           onClick={() => toggleQuestion(question.id)}>
@@ -197,22 +199,23 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
         </button>)}
       </div>
       {questions.filter(question => notes.questionIds.includes(question.id)).map(question => <div className="answer" key={question.id}>
-        <label htmlFor={`answer-${question.id}`}>{question.text}</label>
+        <label htmlFor={`answer-${question.id}`}>{question.text}{question.sub && <small>{question.sub}</small>}</label>
         <textarea id={`answer-${question.id}`} rows={question.id === 'story' ? 6 : 3} maxLength={2000}
           value={notes.answers[question.id] ?? ''} placeholder="浮かんだことを、そのままに。"
           onChange={event => onNotes({ ...notes, answers: { ...notes.answers, [question.id]: event.target.value } })} />
       </div>)}
       <div className="answer">
-        <label htmlFor="art-title">このpaletteにタイトルをつけるなら？</label>
+        <label htmlFor="art-title">タイトルをつけるなら？<small>なくても大丈夫です</small></label>
         <input id="art-title" maxLength={30} value={notes.title} placeholder="たとえば「静かな朝の決意」"
           onChange={event => onNotes({ ...notes, title: event.target.value })} />
       </div>
-      <p>保存画像には、タイトル・今のキーワード表示状態・答えた問いが入ります。</p>
+      <p className="hint">保存画像には、タイトル・答え・今のキーワード表示が入ります。</p>
     </div>
 
     <button type="button" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
     {saved && <div className="saved-result" role="status">
-      <p>保存しました。うまく開けないときは、下の画像を長押し（パソコンは右クリック）して保存してください。</p>
+      <p className="lead">保存しました。</p>
+      <p className="hint">開けないときは、下の画像を長押し（パソコンは右クリック）で保存できます。</p>
       <img src={saved.url} alt="保存した作品の画像" />
       <div className="saved-actions">
         <a href={saved.url} download={saved.file.name}>もう一度ダウンロード</a>
@@ -223,6 +226,6 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
     </div>}
     <div className="return-home-action"><button type="button" onClick={onHome}>トップへ戻る</button></div>
     {error && <p role="alert">{error}</p>}
-    <p className="preview-note">入力内容は再読み込みすると消えます。書き終えたら画像で保存してください。</p>
+    <p className="hint">再読み込みすると消えます。残したいときは画像で保存を。</p>
   </section>
 }

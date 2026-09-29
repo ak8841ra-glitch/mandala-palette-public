@@ -45,12 +45,12 @@ export default function SelectedCard({ keyword, originalWord, onChange, onPlace 
           }
           if (event.key === 'Escape') { event.preventDefault(); finish() }
         }} />
-      <p id="word-help">20文字まで。空欄では確定できません。</p>
+      <p id="word-help" className="hint">20文字まで</p>
       <div className="editor-actions">
         <button type="submit" disabled={!draft.trim()}>この言葉にする</button>
         <button type="button" onClick={finish}>キャンセル</button>
       </div>
-    </form> : <p>丸いカードを押すと、自分の言葉に書き換えられます。</p>}
+    </form> : <p className="hint">カードを押すと、言葉を書き換えられます。</p>}
     {keyword.word !== originalWord && <button className="restore-word" type="button" onClick={() => {
       onChange({ ...keyword, word: originalWord })
       setDraft(originalWord)

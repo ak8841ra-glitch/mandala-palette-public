@@ -124,7 +124,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .card-size-controls { flex-direction: column; gap: 10px; }
 .control-row { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .control-row > span { min-width: 3.5em; font-size: 13px; text-align: right; }
-.card-size-space { min-height: 120px; }
+.card-size-space { min-height: 120px; display: flex; align-items: center; justify-content: center; }
 
 .spot-meanings { max-width: 760px; margin: 40px auto 0; text-align: left; }
 .spot-meanings h2 { font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; font-weight: 400; font-size: 22px; letter-spacing: .08em; margin: 0 0 8px; }
@@ -136,3 +136,21 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .spot-meanings strong { font-weight: 400; font-size: 16px; letter-spacing: .06em; }
 .spot-meanings small { color: #aebdd0; font-size: 12px; }
 .spot-words { color: #f3eee7; font-size: 14px; }
+
+/* Always paint the page ground, so the light text stays readable inside any host frame. */
+html, body { background: #06244b; color: #f3eee7; }
+
+/* Two levels of text: .lead is what to read; .hint can be skipped. */
+.lead { margin: 0 0 8px; font-size: 16px; line-height: 1.9; color: #f3eee7; letter-spacing: .04em; }
+.hint { margin: 0 0 28px; font-size: 12px; line-height: 1.8; color: #a9b8ca; }
+.lead + .hint { margin-top: 0; }
+.lead:not(:has(+ .hint)) { margin-bottom: 28px; }
+.tips { max-width: 540px; margin: 24px auto; text-align: left; color: #c3cbd6; font-size: 13px; }
+.tips summary { width: fit-content; margin: 0 auto; padding: 10px 16px; cursor: pointer; color: #b8dfe8; list-style: none; }
+.tips summary::-webkit-details-marker { display: none; }
+.tips summary::before { content: '＋ '; }
+.tips[open] summary::before { content: '－ '; }
+.tips summary:focus-visible { outline: 2px solid #d8a88a; outline-offset: 3px; border-radius: 4px; }
+.tips ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.9; }
+.answer label small, .story-editor label small { display: block; margin-top: 2px; font-size: 12px; color: #a9b8ca; letter-spacing: .02em; }
+.spot-meanings .lead, .story-editor .lead { margin-top: 4px; }
