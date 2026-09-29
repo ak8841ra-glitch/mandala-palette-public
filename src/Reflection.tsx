@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PlacedCard } from './MandalaField'
 import { QUESTIONS, TRIANGLE_SPOTS, fullQuestion } from './guide'
-import type { Field, Notes, Theme } from './guide'
+import type { Guide, Notes, Theme } from './guide'
 
 const font = '"Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif'
 const serif = '"Yu Mincho", "Hiragino Mincho ProN", serif'
@@ -44,8 +44,8 @@ function wordsAt(cards: PlacedCard[], spot: typeof TRIANGLE_SPOTS[number]) {
   return cards.filter(card => Math.hypot(card.x - spot.x, card.y - spot.y) < .16).map(card => card.word)
 }
 
-export default function Reflection({ cards, artwork, field, theme, notes, onNotes, showWords, onShowWords, onBack, onHome }: {
-  cards: PlacedCard[]; artwork: string; field: Field; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
+export default function Reflection({ cards, artwork, guide, theme, notes, onNotes, showWords, onShowWords, onBack, onHome }: {
+  cards: PlacedCard[]; artwork: string; guide: Guide; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
   showWords: boolean; onShowWords: (show: boolean) => void; onBack: () => void; onHome: () => void
 }) {
   const [preview, setPreview] = useState('')
@@ -89,7 +89,7 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
   useEffect(() => () => { if (saved) URL.revokeObjectURL(saved.url) }, [saved])
   useEffect(() => { setSaved(null) }, [notes, preview])
 
-  const questions = QUESTIONS.filter(question => !question.field || question.field === field)
+  const questions = QUESTIONS.filter(question => !question.guide || question.guide === guide)
   const answered = questions.filter(question => notes.questionIds.includes(question.id) && notes.answers[question.id]?.trim())
 
   function toggleQuestion(id: string) {
@@ -108,7 +108,7 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
       measure.font = `44px ${serif}`
       const titleLines = notes.title.trim() ? lines(measure, notes.title.trim(), 1200) : []
       measure.font = `25px ${font}`
-      const spots = field === 'triangle' ? [{
+      const spots = guide === 'triangle' ? [{
         asked: ['三角形の3つの場所'],
         answer: TRIANGLE_SPOTS.map(spot => {
           const words = wordsAt(cards, spot)
@@ -172,7 +172,7 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
       {showWords ? 'キーワードを隠す' : 'キーワードを表示する'}
     </button>
 
-    {field === 'triangle' && <div className="spot-meanings">
+    {guide === 'triangle' && <div className="spot-meanings">
       <h2>三角形の3つの場所</h2>
       <p className="lead">{theme && theme.id !== 'free' ? `「${theme.label}」に重ねて` : 'こんな見方も'}、眺めてみると…</p>
       <p className="hint">何の姿として見るかは、あなた次第。当てはまらなくても大丈夫です。</p>

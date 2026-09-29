@@ -130,7 +130,9 @@ html, body { background: #06244b; color: #f3eee7; }
 
 /* Picker: palette stays pinned on top, the chosen words stay pinned at the bottom. */
 .picker { max-width: 820px; }
-.palette-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; margin: 20px -8px 8px; padding: 10px 8px; background: #06244bf2; border-bottom: 1px solid #a4906f33; backdrop-filter: blur(6px); }
+.palette-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; padding: calc(env(safe-area-inset-top, 0px) + 8px) max(16px, calc((100% - 720px) / 2)) 8px; background: #06244bf2; border-bottom: 1px solid #a4906f33; backdrop-filter: blur(6px); transform: translateY(-100%); visibility: hidden; transition: transform .2s, visibility .2s; }
+.palette-bar[data-shown="true"] { transform: none; visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .palette-bar { transition: none; } }
 .palette-chip { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; min-height: 0; padding: 4px 0; border: 0; background: transparent; border-radius: 10px; }
 .palette-chip:hover { background: #56acc31f; }
 .palette-swatch { display: block; width: min(44px, 100%); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 2px #06244b, 0 0 0 3px #a4906f66; }
@@ -158,3 +160,37 @@ button.danger { color: #f0bbc0; border-color: #bb858b; }
 .home-note { margin-top: 20px; }
 .word-rewrite label { font-size: 13px; }
 .word-rewrite input { width: 11em; min-height: 44px; padding: 8px 12px; border: 1px solid #b7a7c9; border-radius: 10px; background: #fff; color: #34313c; font: inherit; font-size: 16px; }
+
+/* Color wheel: percentages refer to the original, uncropped square image. */
+.color-wheel { position: relative; width: 100%; max-width: 360px; margin: 16px auto 8px; }
+.color-wheel img { display: block; width: 100%; height: auto; }
+.wheel-hit { position: absolute; display: block; width: 17.75%; height: 17.75%; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: transparent; -webkit-tap-highlight-color: transparent; }
+.wheel-hit:hover, .wheel-hit:active { background: transparent; }
+.wheel-hit[aria-pressed="true"] { box-shadow: 0 0 0 3px #06244b, 0 0 0 5px #f3eee7; }
+.wheel-hit:focus-visible { outline: 3px solid #d8a88a; outline-offset: 3px; }
+.wheel-hit--yellow { left: 23.94%; top: 23.94%; }
+.wheel-hit--green { left: 58.31%; top: 23.94%; }
+.wheel-hit--orange { left: 16.81%; top: 41.13%; }
+.wheel-hit--blue { left: 65.44%; top: 41.13%; }
+.wheel-hit--red { left: 23.94%; top: 58.31%; }
+.wheel-hit--purple { left: 58.31%; top: 58.31%; }
+.wheel-hit--pink { left: 41.13%; top: 65.44%; }
+.wheel-hit--white { left: 41.13%; top: 16.81%; height: 8.88%; border-radius: 100% 100% 0 0 / 200% 200% 0 0; }
+.wheel-hit--black { left: 41.13%; top: 25.69%; height: 8.88%; border-radius: 0 0 100% 100% / 0 0 200% 200%; }
+.wheel-hit--white[aria-pressed="true"], .wheel-hit--black[aria-pressed="true"] { box-shadow: none; outline: 2px solid #f3eee7; outline-offset: 2px; }
+.wheel-count { position: absolute; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #d8a88a; color: #06244b; font-size: 12px; line-height: 20px; text-align: center; pointer-events: none; }
+.wheel-count--yellow { left: 38%; top: 24%; }
+.wheel-count--green { left: 72.5%; top: 24%; }
+.wheel-count--orange { left: 31%; top: 41%; }
+.wheel-count--blue { left: 79.5%; top: 41%; }
+.wheel-count--red { left: 38%; top: 58.5%; }
+.wheel-count--purple { left: 72.5%; top: 58.5%; }
+.wheel-count--pink { left: 55.5%; top: 65.5%; }
+.wheel-count--white { left: 55.5%; top: 16%; }
+
+.home-wheel { display: block; width: min(62vw, 280px); height: auto; margin: 0 auto; }
+
+.guide-picker { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 16px; }
+.guide-picker > span { font-size: 12px; color: #a9b8ca; letter-spacing: .08em; }
+.guide-picker .layout-switch { flex-wrap: wrap; justify-content: center; }
+.guide-picker .layout-switch button { padding: 8px 14px; }

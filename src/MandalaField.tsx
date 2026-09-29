@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction, PointerEvent } from 'react'
 import type { Keyword } from './palette'
-import { FIELD_GUIDES, TRIANGLE_SPOTS } from './guide'
-import type { Field, Theme } from './guide'
+import { GUIDES, GUIDE_TEXT, TRIANGLE_SPOTS } from './guide'
+import type { Guide, Theme } from './guide'
 
 export interface PlacedCard extends Keyword {
   instanceId: string
@@ -18,16 +18,18 @@ const sizes = { small: { label: '小', diameter: .20 }, medium: { label: '中', 
 // Reserve room for the largest size so resizing never moves the center.
 const clamp = (value: number) => Math.max(.18, Math.min(.82, value))
 
-// Placement guides differ by field; they are hints drawn over the field, never part of the saved artwork.
-function FieldGuide({ field }: { field: Field }) {
-  if (field === 'triangle') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
+// Placement guides are hints drawn over the field, never part of the saved artwork.
+function FieldGuide({ guide }: { guide: Guide }) {
+  if (guide === 'none') return null
+  if (guide === 'triangle') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
     {TRIANGLE_SPOTS.map(spot => <g key={spot.number}>
       <circle cx={spot.x * 100} cy={spot.y * 100} r="11" />
       <text x={spot.x * 100} y={spot.y > .5 ? spot.y * 100 + 16 : spot.y * 100 - 12.5}>{spot.number}</text>
     </g>)}
   </svg>
-  if (field === 'horizontal') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
+  if (guide === 'horizontal') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
     <path d="M12 30 H88 M85 28 L88 30 L85 32" />
+    {[20, 50, 80].map(x => <path key={x} d={`M${x} 33 V92`} />)}
     <text x="20" y="26">過去</text><text x="50" y="26">現在</text><text x="80" y="26">未来</text>
   </svg>
   return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
@@ -37,14 +39,12 @@ function FieldGuide({ field }: { field: Field }) {
   </svg>
 }
 
-export default function MandalaField({ cards, setCards, onAdd, artwork, onChangeField, onComplete, field: fieldType, showGuide, onShowGuide, theme }: {
-  field: Field
-  showGuide: boolean
-  onShowGuide: (show: boolean) => void
+export default function MandalaField({ cards, setCards, onAdd, artwork, onComplete, guide, onGuide, theme }: {
+  guide: Guide
+  onGuide: (guide: Guide) => void
   theme: Theme | null
   onComplete: () => void
   artwork: string
-  onChangeField: () => void
   cards: PlacedCard[]
   setCards: Dispatch<SetStateAction<PlacedCard[]>>
   onAdd: () => void
@@ -99,15 +99,18 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
     <p className="eyebrow">MAKE YOUR OWN SPACE</p>
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
-    <p className="lead" id="field-help">{showGuide ? FIELD_GUIDES[fieldType] : '好きな場所へ、自由に'}</p>
-    <div className="layout-switch">
-      <button type="button" aria-pressed={showGuide} onClick={() => onShowGuide(!showGuide)}>
-        配置ガイド：{showGuide ? '表示中' : 'かくしています'}
-      </button>
+    <div className="guide-picker" role="group" aria-labelledby="guide-label">
+      <span id="guide-label">配置ガイド</span>
+      <div className="layout-switch">
+        {GUIDES.map(item => <button key={item} type="button" aria-pressed={guide === item} onClick={() => onGuide(item)}>
+          {GUIDE_TEXT[item].label}
+        </button>)}
+      </div>
     </div>
+    <p className="lead" id="field-help">{GUIDE_TEXT[guide].lead}</p>
     <div ref={field} className="mandala-field" role="group" aria-label="曼荼羅フィールド" aria-describedby="field-help">
       <img className="field-art" src={artwork} alt="" draggable={false} />
-      {showGuide && <FieldGuide field={fieldType} />}
+      <FieldGuide guide={guide} />
       {cards.map(card => <button key={card.instanceId} id={`card-${card.instanceId}`} type="button" className="placed-card"
         aria-pressed={selectedId === card.instanceId}
         aria-label={`${card.word}（${card.colorName}・${cards.indexOf(card) + 1}枚目）を移動`}
@@ -197,7 +200,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
       </ul>
     </details>
     <div className="field-actions"><button type="button" onClick={onAdd}>言葉を追加 <span aria-hidden="true">＋</span></button>
-    <button type="button" className="back-button" onClick={onChangeField}>フィールドを選び直す</button></div>
+</div>
     <div className="place-action"><button type="button" disabled={!cards.length} onClick={onComplete}>完成 →</button></div>
     <p className="hint">再読み込みすると配置はリセットされます。</p>
   </section>
