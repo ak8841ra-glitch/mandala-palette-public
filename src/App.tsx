@@ -13,7 +13,13 @@ import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
-const partsBase = `${import.meta.env.BASE_URL}assets/parts/`
+// Door scenes: the atelier shows a finished おまかせ mandala; the other room shows word cards on the field.
+const atelier = `${import.meta.env.BASE_URL}assets/door-atelier.jpg`
+const SCENE_CARDS = [
+  { word: '希望', bg: '#F2E024', ink: '#4a4200', x: '50%', y: '30%', size: '40%' },
+  { word: '情熱', bg: '#EF4060', ink: '#ffffff', x: '28%', y: '66%', size: '46%' },
+  { word: '深呼吸', bg: '#B7CCE3', ink: '#1c344c', x: '74%', y: '70%', size: '36%' },
+]
 
 type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
 const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
@@ -54,7 +60,12 @@ function Door({ room, name, note, art, onOpen }: { room: string; name: string; n
       <span className="door-room">{room}</span>
       <span className="door-name">{name}</span>
     </span>
-    <span className="door-arch" aria-hidden="true">{art}<span className="door-knob" /></span>
+    <span className="door-frame" aria-hidden="true">
+      <span className="door-window">{art}</span>
+      <span className="door-panel" />
+      <span className="door-knob" />
+    </span>
+    <span className="door-floor" aria-hidden="true" />
     <span className="door-text" aria-hidden="true">{note}<span>約3分</span></span>
   </button>
 }
@@ -129,8 +140,7 @@ export default function App() {
       {screen === 'home' ? <section className="intro" aria-labelledby="title">
         <img className="home-logo" src={logo} width="1000" height="1000" alt="曼荼羅palette" draggable={false} />
         <div className="intro-body">
-        <h1 ref={heading} tabIndex={-1} id="title">どれにしようかな。</h1>
-        <p className="lead">色と言葉を選んだり、曼荼羅をつくったり。<br />2〜3分から、気が向いたときに。</p>
+        <h1 ref={heading} tabIndex={-1} id="title" className="visually-hidden">曼荼羅palette</h1>
         {confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
           <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
           <p className="hint">はじめからにすると、途中の作品は消えます。</p>
@@ -143,9 +153,12 @@ export default function App() {
           {/* Two doors side by side, even on a phone: neither entrance is ranked above the other. */}
           <div className="entrances">
             <Door room="色と言葉の部屋" name="自分を眺める" note="今の気分を眺める" onOpen={() => hasProgress ? setConfirmFresh(true) : startFresh()}
-              art={<span className="door-art door-art--look"><i style={{ background: '#EF4060' }} /><i style={{ background: '#3E6CA8' }} /><i style={{ background: '#F2E024' }} /></span>} />
+              art={<span className="scene scene--look" style={{ backgroundImage: `url(${artwork})` }}>
+                {/* The room's highlight: word cards placed on the field. */}
+                {SCENE_CARDS.map(card => <i key={card.word} style={{ left: card.x, top: card.y, width: card.size, background: card.bg, color: card.ink }}>{card.word}</i>)}
+              </span>} />
             <Door room="曼荼羅のアトリエ" name="自分でつくる" note="作品をつくる" onOpen={() => { setPresets([]); setScreen('make') }}
-              art={<span className="door-art door-art--make" style={{ maskImage: `url(${partsBase}ring_petal.png)`, WebkitMaskImage: `url(${partsBase}ring_petal.png)` }} />} />
+              art={<img className="scene scene--make" src={atelier} alt="" draggable={false} />} />
           </div>
           {resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
             前回のつづきから<span aria-hidden="true">→</span>
