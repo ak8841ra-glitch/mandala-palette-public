@@ -5,12 +5,14 @@ import MandalaField from './MandalaField'
 import Reflection from './Reflection'
 import MandalaMaker, { emptyMaker } from './MandalaMaker'
 import type { Maker } from './MandalaMaker'
+import type { Preset } from './omakase'
 import type { PlacedCard } from './MandalaField'
 import { GUIDES, THEMES, emptyNotes } from './guide'
 import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
+const partsBase = `${import.meta.env.BASE_URL}assets/parts/`
 
 type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
 const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
@@ -23,6 +25,14 @@ interface Draft {
 }
 function loadDraft(): Partial<Draft> {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as Partial<Draft> } catch { return {} }
+}
+
+// Each card's color counts by its size, so larger cards lead the おまかせ design.
+const SIZE_WEIGHT = { small: 1, medium: 2, large: 3 } as const
+function presetsFrom(cards: PlacedCard[]): Preset[] {
+  const weights = new Map<string, number>()
+  for (const card of cards) weights.set(card.bg, (weights.get(card.bg) ?? 0) + SIZE_WEIGHT[card.size ?? 'medium'])
+  return [...weights].map(([color, weight]) => ({ color, weight })).sort((a, b) => b.weight - a.weight)
 }
 
 const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
@@ -53,7 +63,7 @@ export default function App() {
   const [picked, setPicked] = useState<string[]>((draft.picked ?? []).filter(id => KEYWORDS.has(id)))
   const [open, setOpen] = useState<string[]>(draft.open ?? [])
   const [maker, setMaker] = useState<Maker>(draft.maker?.layers ? draft.maker : emptyMaker())
-  const [makerColors, setMakerColors] = useState<string[]>([])
+  const [presets, setPresets] = useState<Preset[]>([])
   const [confirmFresh, setConfirmFresh] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const initialRender = useRef(true)
@@ -115,16 +125,25 @@ export default function App() {
           </div>
           <button type="button" className="back-button" onClick={() => setConfirmFresh(false)}>やめる</button>
         </div> : <>
+          {/* Two doors side by side, even on a phone: neither entrance is ranked above the other. */}
           <div className="entrances">
-            <button type="button" className="entrance" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>
-              <span className="entrance-name">自分を眺める</span>
-              <span className="entrance-text">色と言葉を選んで、今の気分を眺める</span>
-              <span className="entrance-meta">約3分</span>
+            <button type="button" className="door" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>
+              <span className="door-arch" aria-hidden="true">
+                <span className="door-art door-art--look"><i style={{ background: '#EF4060' }} /><i style={{ background: '#3E6CA8' }} /><i style={{ background: '#F2E024' }} /></span>
+                <span className="door-knob" />
+              </span>
+              <span className="door-name">自分を<br />眺める</span>
+              <span className="door-text">色と言葉で、<br />今の気分を眺める</span>
+              <span className="door-meta">約3分</span>
             </button>
-            <button type="button" className="entrance" onClick={() => { setMakerColors([]); setScreen('make') }}>
-              <span className="entrance-name">自分でつくる</span>
-              <span className="entrance-text">パーツと色を選んで、曼荼羅アートをつくる</span>
-              <span className="entrance-meta">約3分</span>
+            <button type="button" className="door" onClick={() => { setPresets([]); setScreen('make') }}>
+              <span className="door-arch" aria-hidden="true">
+                <span className="door-art door-art--make" style={{ maskImage: `url(${partsBase}ring_petal.png)`, WebkitMaskImage: `url(${partsBase}ring_petal.png)` }} />
+                <span className="door-knob" />
+              </span>
+              <span className="door-name">自分で<br />つくる</span>
+              <span className="door-text">パーツと色で、<br />曼荼羅アートを</span>
+              <span className="door-meta">約3分</span>
             </button>
           </div>
           {resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
@@ -133,8 +152,8 @@ export default function App() {
         </>}
         <p className="hint home-note">無料・登録なし。入力した内容は、外部に送られません。</p>
       </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
-        onMake={() => { setMakerColors([...new Set(cards.map(card => card.bg))]); setScreen('make') }} /> : screen === 'make'
-        ? <MandalaMaker maker={maker} onMaker={setMaker} presetColors={makerColors} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
+        onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
+        ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
             ← {cards.length ? '配置に戻る' : 'トップへ戻る'}

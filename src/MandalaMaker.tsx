@@ -3,10 +3,10 @@ import type { Ref } from 'react'
 import { FAMILIES } from './palette'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
+import { CHARCOAL, IVORY, omakase } from './omakase'
+import type { Layer, Maker, PartKey, Preset, Zone } from './omakase'
 
 // Parts come from the 楽描き曼荼羅 part artwork: single-color shapes on transparency, recolored on draw.
-type PartKey = 'dot' | 'spiral' | 'spiral_tail' | 'petal' | 'lotus' | 'spark'
-  | 'ring_center' | 'ring_petal' | 'ring_lotus' | 'ring_outer' | 'dot_ring' | 'ring_plain'
 const PARTS: Record<PartKey, string> = {
   dot: '点', spiral: '渦巻き', spiral_tail: '渦巻き（尾つき）', petal: '花びら', lotus: '蓮', spark: 'きらめき',
   ring_center: '花のメダリオン', ring_petal: '花びらの輪', ring_lotus: '蓮の輪', ring_outer: '外側の輪', dot_ring: '点の輪', ring_plain: 'シンプルな輪',
@@ -15,23 +15,21 @@ const MOTIFS: PartKey[] = ['petal', 'lotus', 'dot', 'spiral', 'spiral_tail', 'sp
 const RINGS: PartKey[] = ['ring_plain', 'ring_petal', 'ring_lotus', 'ring_outer', 'ring_center', 'dot_ring']
 const partUrl = (part: PartKey) => `${import.meta.env.BASE_URL}assets/parts/${part}.png`
 
-type Zone = 'center' | 'inner' | 'outer' | 'fill'
 const ZONES: Record<Zone, { label: string; count: [number, number, number]; scale: [number, number, number]; radius: [number, number, number]; base: number }> = {
   // [default, min, max]; radius and base size are % of the canvas
-  center: { label: '中心', count: [1, 1, 1], scale: [1, .4, 2.2], radius: [0, 0, 0], base: 34 },
-  inner: { label: '内側', count: [6, 2, 16], scale: [.8, .3, 1.5], radius: [22, 12, 32], base: 20 },
-  outer: { label: '外側', count: [12, 3, 28], scale: [.5, .2, 1.2], radius: [42, 30, 48], base: 13 },
+  center: { label: '中心', count: [1, 1, 1], scale: [1, .2, 2.2], radius: [0, 0, 0], base: 34 },
+  inner: { label: '内側', count: [6, 2, 16], scale: [.8, .3, 1.5], radius: [22, 8, 32], base: 20 },
+  outer: { label: '外側', count: [12, 3, 32], scale: [.5, .2, 1.2], radius: [42, 30, 48], base: 13 },
   fill: { label: '全体を囲む', count: [1, 1, 1], scale: [1, .1, 1.5], radius: [0, 0, 0], base: 94 },
 }
 
-export interface Layer { id: number; zone: Zone; part: PartKey; count: number; scale: number; radius: number; rotation: number; color: string }
-export interface Maker { bg: string; layers: Layer[]; nextId: number }
-export const emptyMaker = (): Maker => ({ bg: '#FFFDF8', layers: [], nextId: 1 })
+export type { Maker }
+export const emptyMaker = (): Maker => ({ bg: IVORY, layers: [], nextId: 1 })
 
 // Every tone of every color, in color-wheel order.
 const TONES = FAMILIES.flatMap(family => family.colors.flatMap(color => color.tiers.map(tier => tier.bg)))
 const BACKGROUNDS = [
-  { color: '#FFFDF8', name: 'アイボリー' }, { color: '#FFFFFF', name: '白' }, { color: '#3A3639', name: 'チャコール' },
+  { color: IVORY, name: 'アイボリー' }, { color: '#FFFFFF', name: '白' }, { color: CHARCOAL, name: 'チャコール' },
   { color: '#14213D', name: '紺' }, { color: '#0A0A0A', name: '黒' },
   ...FAMILIES.slice(1).map(family => ({ color: family.colors[0]!.tiers[0]!.bg, name: `淡い${family.name}` })),
 ]
@@ -39,27 +37,6 @@ const BACKGROUNDS = [
 function newLayer(maker: Maker, zone: Zone, part: PartKey, color: string): Layer {
   const d = ZONES[zone]
   return { id: maker.nextId, zone, part, count: d.count[0], scale: d.scale[0], radius: d.radius[0], rotation: 0, color }
-}
-
-// Relative luminance, to keep near-white tones out of the starter on the ivory background.
-function luminance(hex: string) {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
-  return .2126 * r! + .7152 * g! + .0722 * b!
-}
-
-// A small starter, so the first view already shows what the tool makes.
-function starter(colors: string[]): Maker {
-  const visible = colors.filter(color => luminance(color) < .8)
-  const [a = '#3E6CA8', b = '#EC6E88', c = '#8C4FAE', d = '#F2941C'] = [...visible, ...['#3E6CA8', '#EC6E88', '#8C4FAE', '#F2941C'].filter(color => !visible.includes(color))]
-  let maker = emptyMaker()
-  const add = (zone: Zone, part: PartKey, color: string, patch: Partial<Layer> = {}) => {
-    maker = { ...maker, layers: [...maker.layers, { ...newLayer(maker, zone, part, color), ...patch }], nextId: maker.nextId + 1 }
-  }
-  add('fill', 'ring_plain', a)
-  add('inner', 'petal', b, { count: 8 })
-  add('center', 'lotus', c)
-  add('outer', 'dot', d, { count: 16, scale: .35 })
-  return maker
 }
 
 type Tinted = Map<string, HTMLCanvasElement>
@@ -78,7 +55,8 @@ async function tint(cache: Tinted, part: PartKey, color: string) {
 }
 
 // isCurrent lets a newer draw win when part images finish loading out of order.
-async function draw(canvas: HTMLCanvasElement, maker: Maker, cache: Tinted, isCurrent = () => true) {
+// highlightId fades the other layers, so a chip tap shows which part it means.
+async function draw(canvas: HTMLCanvasElement, maker: Maker, cache: Tinted, isCurrent = () => true, highlightId: number | null = null) {
   const images = await Promise.all(maker.layers.map(layer => tint(cache, layer.part, layer.color)))
   if (!isCurrent()) return
   const W = canvas.width
@@ -90,6 +68,7 @@ async function draw(canvas: HTMLCanvasElement, maker: Maker, cache: Tinted, isCu
     const box = ZONES[layer.zone].base * layer.scale / 100 * W
     const fit = Math.min(box / image.width, box / image.height)
     const w = image.width * fit, h = image.height * fit
+    ctx.globalAlpha = highlightId === null || highlightId === layer.id ? 1 : .15
     for (let i = 0; i < layer.count; i++) {
       const angle = (layer.zone === 'inner' || layer.zone === 'outer' ? 360 / layer.count * i : 0) + layer.rotation
       const rad = angle * Math.PI / 180
@@ -101,14 +80,24 @@ async function draw(canvas: HTMLCanvasElement, maker: Maker, cache: Tinted, isCu
       ctx.restore()
     }
   })
+  ctx.globalAlpha = 1
 }
 
-function Swatches({ colors, value, onPick, label }: { colors: string[]; value: string; onPick: (color: string) => void; label: string }) {
+function Swatches({ colors, value, onPick, label, custom }: { colors: string[]; value: string; onPick: (color: string) => void; label: string; custom?: string }) {
+  const known = colors.some(color => color.toLowerCase() === value.toLowerCase())
   return <div className="swatches" role="group" aria-label={label}>
     {colors.map(color => <button key={color} type="button" className="swatch" style={{ background: color }}
       aria-label={color} aria-pressed={color.toLowerCase() === value.toLowerCase()} onClick={() => onPick(color)} />)}
+    {custom && <label className={`swatch swatch-custom${known ? '' : ' is-picked'}`} title="好きな色を選ぶ"
+      style={known ? undefined : { background: value }}>
+      <span className="visually-hidden">{custom}</span>
+      <input type="color" value={value} onChange={event => onPick(event.target.value)} />
+    </label>}
   </div>
 }
+
+const partIcon = (part: PartKey, color = 'currentColor') => <span className="part-icon" aria-hidden="true"
+  style={{ background: color, maskImage: `url(${partUrl(part)})`, WebkitMaskImage: `url(${partUrl(part)})` }} />
 
 function Slider({ id, label, min, max, step, value, onChange }: {
   id: string; label: string; min: number; max: number; step: number; value: number; onChange: (value: number) => void
@@ -119,8 +108,8 @@ function Slider({ id, label, min, max, step, value, onChange }: {
   </div>
 }
 
-export default function MandalaMaker({ maker, onMaker, presetColors, heading, onHome }: {
-  maker: Maker; onMaker: (maker: Maker) => void; presetColors: string[]
+export default function MandalaMaker({ maker, onMaker: setMaker, presets, heading, onHome }: {
+  maker: Maker; onMaker: (maker: Maker) => void; presets: Preset[]
   heading: Ref<HTMLHeadingElement>; onHome: () => void
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
@@ -128,7 +117,11 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
   const drawId = useRef(0)
   const [zone, setZone] = useState<Zone>('inner')
   const [selectedId, setSelectedId] = useState<number | null>(maker.layers.at(-1)?.id ?? null)
-  const [confirmReset, setConfirmReset] = useState(false)
+  const [confirm, setConfirm] = useState<'reset' | 'omakase' | null>(null)
+  const [highlightId, setHighlightId] = useState<number | null>(null)
+  const presetColors = presets.map(preset => preset.color)
+  // Any hand edit ends the おまかせ state, so a new おまかせ then asks before replacing the work.
+  const onMaker = (next: Maker) => setMaker({ ...next, auto: false })
   const [saved, setSaved] = useState<Saved | null>(null)
   const [error, setError] = useState('')
   const selected = maker.layers.find(layer => layer.id === selectedId)
@@ -137,9 +130,19 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
   useEffect(() => {
     if (!canvas.current) return
     const id = ++drawId.current
-    draw(canvas.current, maker, cache.current, () => id === drawId.current).catch(() => setError('パーツを表示できませんでした。再読み込みしてお試しください。'))
-    setSaved(null)
-  }, [maker])
+    draw(canvas.current, maker, cache.current, () => id === drawId.current, highlightId).catch(() => setError('パーツを表示できませんでした。再読み込みしてお試しください。'))
+  }, [maker, highlightId])
+  useEffect(() => setSaved(null), [maker])
+  useEffect(() => {
+    if (highlightId === null) return
+    const timer = setTimeout(() => setHighlightId(null), 900)
+    return () => clearTimeout(timer)
+  }, [highlightId])
+
+  function runOmakase() {
+    const next = omakase(presets)
+    setMaker(next); setSelectedId(null); setConfirm(null)
+  }
 
   function update(patch: Partial<Layer>) {
     if (!selected) return
@@ -180,19 +183,26 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
       <span className="step-label">曼荼羅をつくる</span>
     </nav>
     <h1 ref={heading} tabIndex={-1} id="maker-title">パーツを選んで、<br />曼荼羅をつくる。</h1>
-    <p className="lead">3つくらい置くだけで、形になります。</p>
+    <p className="lead">おまかせでも、3つくらい置くだけでも。</p>
 
     <div className="maker-stage">
       <canvas ref={canvas} width={900} height={900} className="maker-canvas" role="img"
         aria-label={maker.layers.length ? `パーツ${maker.layers.length}つの曼荼羅` : 'まだ何も置いていない曼荼羅'} />
       {maker.layers.length === 0 && <div className="maker-empty">
-        <p>下からパーツを選ぶと、ここに置かれます。</p>
-        <button type="button" className="button-quiet" onClick={() => {
-          const next = starter(presetColors)
-          onMaker(next); setSelectedId(next.layers.at(-1)!.id)
-        }}>お手本から始める</button>
+        <p>{presets.length ? '選んだ色と大きさから、ひとつ作ってみる？' : 'パーツを選ぶか、おまかせで。'}</p>
+        <button type="button" className="button-primary" onClick={runOmakase}>おまかせで作る</button>
       </div>}
     </div>
+    {maker.layers.length > 0 && (confirm === 'omakase' ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="omakase-text">
+      <p id="omakase-text" className="lead">今の作品を、別のおまかせに置き換えますか？</p>
+      <div className="home-actions">
+        <button type="button" className="danger" onClick={runOmakase}>置き換える</button>
+        <button type="button" className="button-quiet" onClick={() => setConfirm(null)}>やめる</button>
+      </div>
+    </div> : <div className="maker-shuffle">
+      <button type="button" className="button-quiet" onClick={() => maker.auto ? runOmakase() : setConfirm('omakase')}>別のおまかせ</button>
+      {maker.auto && <span className="hint">気に入ったら、下で色やパーツを変えられます。</span>}
+    </div>)}
 
     <div className="maker-panel">
       <h2>1. パーツを置く</h2>
@@ -203,7 +213,7 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
       </div>
       <div className="part-grid" role="group" aria-label={`${ZONES[zone].label}に置くパーツ`}>
         {(zone === 'fill' ? RINGS : MOTIFS).map(part => <button key={part} type="button" className="part-button" onClick={() => add(part)}>
-          <span className="part-icon" aria-hidden="true" style={{ maskImage: `url(${partUrl(part)})`, WebkitMaskImage: `url(${partUrl(part)})` }} />
+          {partIcon(part)}
           <span>{PARTS[part]}</span>
         </button>)}
       </div>
@@ -211,15 +221,18 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
 
     {maker.layers.length > 0 && <div className="maker-panel">
       <h2>2. 選んで、整える</h2>
-      <div className="layer-chips" role="group" aria-label="置いたパーツ（右ほど手前）">
-        {maker.layers.map(layer => <button key={layer.id} type="button" aria-pressed={layer.id === selectedId} onClick={() => setSelectedId(layer.id)}>
-          <span className="layer-dot" style={{ background: layer.color }} aria-hidden="true" />{ZONES[layer.zone].label}・{PARTS[layer.part]}
+      <p className="hint">パーツを選ぶと、作品の中でそのパーツだけが浮かび上がります。</p>
+      <div className="layer-chips" role="group" aria-label="置いたパーツ（下ほど手前）">
+        {maker.layers.map(layer => <button key={layer.id} type="button" className="layer-chip" aria-pressed={layer.id === selectedId}
+          onClick={() => { setSelectedId(layer.id); setHighlightId(layer.id) }}>
+          <span className="layer-thumb" style={{ background: maker.bg }}>{partIcon(layer.part, layer.color)}</span>
+          <span className="layer-name">{PARTS[layer.part]}<small>{ZONES[layer.zone].label}{layer.count > 1 ? `・${layer.count}こ` : ''}</small></span>
         </button>)}
       </div>
       {selected && d && <div className="layer-editor">
         <p className="hint">色</p>
         {presetColors.length > 0 && <Swatches colors={presetColors} value={selected.color} onPick={color => update({ color })} label="今日の色" />}
-        <Swatches colors={TONES} value={selected.color} onPick={color => update({ color })} label="パーツの色" />
+        <Swatches colors={TONES} value={selected.color} onPick={color => update({ color })} label="パーツの色" custom="好きな色を選ぶ" />
         {d.count[2] > d.count[1] && <Slider id="layer-count" label="数" min={d.count[1]} max={d.count[2]} step={1} value={selected.count} onChange={count => update({ count })} />}
         {d.radius[2] > d.radius[1] && <Slider id="layer-radius" label="広がり" min={d.radius[1]} max={d.radius[2]} step={1} value={selected.radius} onChange={radius => update({ radius })} />}
         <Slider id="layer-scale" label="大きさ" min={d.scale[1]} max={d.scale[2]} step={.05} value={selected.scale} onChange={scale => update({ scale })} />
@@ -237,23 +250,20 @@ export default function MandalaMaker({ maker, onMaker, presetColors, heading, on
 
     <div className="maker-panel">
       <h2>3. 背景の色</h2>
-      <div className="swatches" role="group" aria-label="背景の色">
-        {BACKGROUNDS.map(item => <button key={item.color} type="button" className="swatch" style={{ background: item.color }}
-          aria-label={item.name} title={item.name} aria-pressed={maker.bg === item.color} onClick={() => onMaker({ ...maker, bg: item.color })} />)}
-      </div>
+      <Swatches colors={BACKGROUNDS.map(item => item.color)} value={maker.bg} onPick={bg => onMaker({ ...maker, bg })} label="背景の色" custom="好きな背景色を選ぶ" />
     </div>
 
     <div className="maker-actions">
       <button type="button" className="button-primary" disabled={!maker.layers.length} onClick={save}>画像で保存</button>
       {saved && <SavedResult saved={saved} title="曼荼羅palette" />}
       {error && <p role="alert">{error}</p>}
-      {confirmReset ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="reset-text">
+      {confirm === 'reset' ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="reset-text">
         <p id="reset-text" className="lead">今の作品を消して、はじめから？</p>
         <div className="home-actions">
-          <button type="button" className="danger" onClick={() => { onMaker(emptyMaker()); setSelectedId(null); setConfirmReset(false) }}>消して、はじめから</button>
-          <button type="button" className="button-quiet" onClick={() => setConfirmReset(false)}>やめる</button>
+          <button type="button" className="danger" onClick={() => { setMaker(emptyMaker()); setSelectedId(null); setConfirm(null) }}>消して、はじめから</button>
+          <button type="button" className="button-quiet" onClick={() => setConfirm(null)}>やめる</button>
         </div>
-      </div> : maker.layers.length > 0 && <button type="button" className="back-button" onClick={() => setConfirmReset(true)}>はじめから作り直す</button>}
+      </div> : maker.layers.length > 0 && <button type="button" className="back-button" onClick={() => setConfirm('reset')}>はじめから作り直す</button>}
       <p className="hint">作りかけの作品は、このブラウザの中に自動で残ります。</p>
     </div>
   </section>
