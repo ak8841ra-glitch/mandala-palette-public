@@ -76,3 +76,18 @@ export function keywordsFor(color: PaletteColor): Keyword[] {
     })),
   ))
 }
+
+// Palette order as on the color wheel, clockwise from the top; white and black share one family.
+export interface Family { key: string; name: string; colors: PaletteColor[] }
+const byKey = (key: string) => COLORS.find(item => item.key === key)!
+export const FAMILIES: readonly Family[] = [
+  { key: 'white', name: '白・黒', colors: [byKey('white'), byKey('black')] },
+  ...['green', 'blue', 'purple', 'pink', 'red', 'orange', 'yellow'].map(key => ({ key, name: byKey(key).name, colors: [byKey(key)] })),
+]
+
+export interface PickedKeyword extends Keyword { colorId: string; colorName: string }
+export const KEYWORDS: ReadonlyMap<string, PickedKeyword> = new Map(FAMILIES.flatMap(family =>
+  keywordsFor(family.colors[0]!).map(keyword => {
+    const color = byKey(keyword.id.split('-')[0]!)
+    return [keyword.id, { ...keyword, colorId: color.key, colorName: color.name }] as const
+  })))

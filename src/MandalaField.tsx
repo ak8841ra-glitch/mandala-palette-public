@@ -53,6 +53,8 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
   const [deleted, setDeleted] = useState<{ card: PlacedCard; index: number } | null>(null)
   const undoButton = useRef<HTMLButtonElement>(null)
   const selected = cards.find(card => card.instanceId === selectedId)
+  const [rewrite, setRewrite] = useState<{ id: string; text: string } | null>(null)
+  const editing = rewrite && rewrite.id === selectedId ? rewrite : null
   const field = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; pointer: number; dx: number; dy: number } | null>(null)
 
@@ -139,6 +141,26 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
           <span>重なり</span>
           <button type="button" disabled={depth >= stack.length - 1} onClick={() => shift(selected.instanceId, 1)}>手前へ</button>
           <button type="button" disabled={depth <= 0} onClick={() => shift(selected.instanceId, -1)}>奥へ</button>
+        </div>
+        {editing ? <form className="control-row word-rewrite" onSubmit={event => {
+          event.preventDefault()
+          const word = editing.text.trim()
+          if (!word) return
+          setCards(previous => previous.map(card => card.instanceId === editing.id ? { ...card, word } : card))
+          setRewrite(null)
+        }}>
+          <label htmlFor="card-word">言葉</label>
+          <input id="card-word" value={editing.text} maxLength={20} autoFocus
+            onChange={event => setRewrite({ id: editing.id, text: event.target.value })}
+            onKeyDown={event => {
+              if (event.nativeEvent.isComposing) { if (event.key === 'Enter') event.preventDefault(); return }
+              if (event.key === 'Escape') { event.preventDefault(); setRewrite(null) }
+            }} />
+          <button type="submit" disabled={!editing.text.trim()}>決定</button>
+          <button type="button" onClick={() => setRewrite(null)}>やめる</button>
+        </form> : <div className="control-row">
+          <span>言葉</span>
+          <button type="button" onClick={() => setRewrite({ id: selected.instanceId, text: selected.word })}>書き換える</button>
         <button type="button" className="delete-card" aria-label={`「${selected.word}」を削除`} onClick={() => {
           setDeleted({ card: selected, index: cards.findIndex(card => card.instanceId === selected.instanceId) })
           setCards(previous => previous.filter(card => card.instanceId !== selected.instanceId))
@@ -146,9 +168,9 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
           drag.current = null
           requestAnimationFrame(() => undoButton.current?.focus({ preventScroll: true }))
         }}>削除</button>
-        </div>
+        </div>}
       </div>}
-      {!selected && <p className="hint">カードを選ぶと、大きさや重なりを変えられます</p>}
+      {!selected && <p className="hint">カードを選ぶと、大きさ・重なり・言葉を変えられます</p>}
     </div>
     <div className="delete-feedback" role="status">
       {deleted && <><span>「{deleted.card.word}」を削除しました。</span>
@@ -169,12 +191,12 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
       <summary>置き方のヒント</summary>
       <ul>
         <li>大きさ＝大切さ、色＝感覚。置く場所にも意味をこめられます（決まりではありません）</li>
-        <li>カードを選ぶと、大きさ・重なり・削除を変えられます</li>
+        <li>カードを選ぶと、大きさ・重なり・言葉の書き換え・削除ができます</li>
         <li>重ねても、何度動かしても大丈夫です</li>
         <li>キーボードでは、カードを選んで矢印キーで移動できます</li>
       </ul>
     </details>
-    <div className="field-actions"><button type="button" onClick={onAdd}>もう1枚追加 <span aria-hidden="true">＋</span></button>
+    <div className="field-actions"><button type="button" onClick={onAdd}>言葉を追加 <span aria-hidden="true">＋</span></button>
     <button type="button" className="back-button" onClick={onChangeField}>フィールドを選び直す</button></div>
     <div className="place-action"><button type="button" disabled={!cards.length} onClick={onComplete}>完成 →</button></div>
     <p className="hint">再読み込みすると配置はリセットされます。</p>

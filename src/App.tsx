@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { COLORS, keywordsFor } from './palette'
-import type { Keyword, PaletteColor } from './palette'
-import SelectedCard from './SelectedCard'
+import { KEYWORDS } from './palette'
+import WordPicker from './WordPicker'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
 import type { PlacedCard } from './MandalaField'
@@ -10,23 +9,45 @@ import type { Field, Notes, Theme } from './guide'
 
 const descriptions = ['小花が三角形に広がる模様', '小花が横一列に続く模様', '小花が円状に広がる模様']
 
+type Screen = 'home' | 'theme' | 'pick' | 'fields' | 'field' | 'reflection'
+
+// The draft lives only in this browser, so an interrupted session can resume after a reload.
+const DRAFT_KEY = 'mandala-palette:draft'
+interface Draft {
+  screen: Screen; themeId: string | null; field: Field | null; cards: PlacedCard[]; picked: string[]
+  open: string[]; notes: Notes; showGuide: boolean; showWords: boolean
+}
+function loadDraft(): Partial<Draft> {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as Partial<Draft> } catch { return {} }
+}
+
 const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
 
+// New cards start on a ring around the center, so each one can be seen and grabbed.
+function ring(count: number, index: number) {
+  if (count === 1) return { x: .5, y: .5 }
+  const angle = -Math.PI / 2 + index * 2 * Math.PI / count
+  const radius = count > 4 ? .28 : .22
+  return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius }
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<'home' | 'theme' | 'colors' | 'keywords' | 'fields' | 'field' | 'reflection'>('home')
-  const resumeScreen = useRef<typeof screen | null>(null)
+  const [draft] = useState(loadDraft)
+  const [screen, setScreen] = useState<Screen>('home')
+  const [resumeScreen, setResumeScreen] = useState<Screen | null>(draft.screen && draft.screen !== 'home' ? draft.screen : null)
   function goHome() {
-    if (screen !== 'home') resumeScreen.current = screen
+    if (screen !== 'home') setResumeScreen(screen)
     setScreen('home')
   }
-  const [theme, setTheme] = useState<Theme | null>(null)
-  const [showGuide, setShowGuide] = useState(true)
-  const [notes, setNotes] = useState<Notes>(emptyNotes)
-  const [showWords, setShowWords] = useState(true)
-  const [selectedField, setSelectedField] = useState<Field | null>(null)
-  const [cards, setCards] = useState<PlacedCard[]>([])
-  const [color, setColor] = useState<PaletteColor | null>(null)
-  const [keyword, setKeyword] = useState<Keyword | null>(null)
+  const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
+  const [showGuide, setShowGuide] = useState(draft.showGuide ?? true)
+  const [notes, setNotes] = useState<Notes>(draft.notes ?? emptyNotes())
+  const [showWords, setShowWords] = useState(draft.showWords ?? true)
+  const [selectedField, setSelectedField] = useState<Field | null>(draft.field ?? null)
+  const [cards, setCards] = useState<PlacedCard[]>(draft.cards ?? [])
+  const [picked, setPicked] = useState<string[]>((draft.picked ?? []).filter(id => KEYWORDS.has(id)))
+  const [open, setOpen] = useState<string[]>(draft.open ?? [])
+  const [confirmFresh, setConfirmFresh] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const initialRender = useRef(true)
 
@@ -38,35 +59,38 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [screen])
 
+  useEffect(() => {
+    const saved: Draft = { screen: screen === 'home' ? resumeScreen ?? 'home' : screen, themeId: theme?.id ?? null,
+      field: selectedField, cards, picked, open, notes, showGuide, showWords }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
+  }, [screen, resumeScreen, theme, selectedField, cards, picked, open, notes, showGuide, showWords])
+
+  const hasProgress = cards.length > 0 || picked.length > 0 || hasNotes(notes)
+
   function startFresh() {
-    if ((cards.length > 0 || color || keyword || hasNotes(notes)) && !window.confirm('今の作品と入力した文章を消して、はじめから作りますか？残したい作品は、先に「つづきから」で戻って画像保存してください。')) return
     setCards([])
-    setColor(null)
-    setKeyword(null)
+    setPicked([])
+    setOpen([])
     setSelectedField(null)
     setNotes(emptyNotes())
     setTheme(null)
     setShowGuide(true)
     setShowWords(true)
-    resumeScreen.current = null
+    setConfirmFresh(false)
+    setResumeScreen(null)
     setScreen('theme')
   }
 
-  function selectColor(nextColor: PaletteColor) {
-    if (color?.key !== nextColor.key) setKeyword(null)
-    setColor(nextColor)
-    setScreen('keywords')
-  }
-
-  function placeCard() {
-    if (!keyword || !color) return
-    const instanceId = crypto.randomUUID()
-    setCards(previous => [...previous, {
-      ...keyword, instanceId, colorId: color.key, colorName: color.name,
-      x: .42 + (previous.length % 4) * .05, y: .42 + (previous.length % 4) * .05,
-      z: Math.max(0, ...previous.map(card => card.z)) + 1,
-    }])
-    setScreen(selectedField ? 'field' : 'fields')
+  function placePicked() {
+    setCards(previous => {
+      const top = Math.max(0, ...previous.map(card => card.z))
+      return [...previous, ...picked.map((id, index) => ({
+        ...KEYWORDS.get(id)!, instanceId: crypto.randomUUID(), ...ring(picked.length, index),
+        size: picked.length > 4 ? 'small' as const : 'medium' as const, z: top + index + 1,
+      }))]
+    })
+    setPicked([])
+    setOpen([])
   }
 
   return (
@@ -88,19 +112,27 @@ export default function App() {
         <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
         <p className="lead">色と言葉を選んで、置いて、眺める。</p>
         <p className="hint">正解はありません。</p>
-        <div className="home-actions">
-          <button type="button" onClick={startFresh}>はじめから<span aria-hidden="true">↗</span></button>
-          {resumeScreen.current && <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
+        {confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
+          <p id="confirm-fresh-text" className="lead">今の作品を消して、はじめから作りますか？</p>
+          <p className="hint">残したい作品は、「つづきから」で戻って画像保存できます。</p>
+          <div className="home-actions">
+            <button type="button" className="danger" onClick={startFresh}>消して、はじめから</button>
+            <button type="button" onClick={() => setConfirmFresh(false)}>やめる</button>
+          </div>
+        </div> : <div className="home-actions">
+          {resumeScreen && <button type="button" onClick={() => setScreen(resumeScreen)}>
             つづきから<span aria-hidden="true">→</span>
           </button>}
-        </div>
+          <button type="button" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>はじめから<span aria-hidden="true">↗</span></button>
+        </div>}
+        <p className="hint home-note">約5分・無料・登録なし。<br />入力した内容は、外部に送られません。</p>
       </section> : screen === 'fields' ? <section className="selection field-selection" aria-labelledby="field-choice-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => {
             if (selectedField) setScreen('field')
-            else { setCards(previous => previous.slice(0, -1)); setScreen('keywords') }
-          }}>← {selectedField ? '配置に戻る' : 'カードに戻る'}</button>
-          <span className="step-label">04 / フィールドを選ぶ</span>
+            else setScreen('pick')
+          }}>← {selectedField ? '配置に戻る' : '言葉に戻る'}</button>
+          <span className="step-label">03 / フィールドを選ぶ</span>
         </nav>
         <h1 ref={heading} tabIndex={-1} id="field-choice-title">どの模様に、置いてみる？</h1>
         <p className="lead">気になる模様をひとつ。</p>
@@ -108,13 +140,11 @@ export default function App() {
         <div className="field-options">
           {fields.map((field, index) => <button key={field} type="button" className="field-option"
             aria-label={`${descriptions[index]}を選ぶ`} aria-pressed={selectedField === field}
-            onClick={() => { setSelectedField(field); setScreen('field') }}>
+            onClick={() => { setSelectedField(field); if (picked.length) placePicked(); setScreen('field') }}>
             <img src={`${import.meta.env.BASE_URL}assets/field-${field}.svg`} alt={descriptions[index]} draggable={false} />
           </button>)}
         </div>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} field={selectedField ?? 'triangle'} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField field={selectedField ?? 'triangle'} showGuide={showGuide} onShowGuide={setShowGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
-        setColor(null); setKeyword(null); setScreen('colors')
-      }} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
+      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} field={selectedField ?? 'triangle'} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField field={selectedField ?? 'triangle'} showGuide={showGuide} onShowGuide={setShowGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
             ← {cards.length ? '配置に戻る' : 'トップへ戻る'}
@@ -127,51 +157,15 @@ export default function App() {
         <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
           {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
             aria-pressed={theme?.id === item.id}
-            onClick={() => { setTheme(item); setScreen(cards.length ? 'field' : 'colors') }}>
+            onClick={() => { setTheme(item); setScreen(cards.length ? 'field' : 'pick') }}>
             {item.label}
           </button>)}
         </div>
-      </section> : <section className="selection" aria-labelledby="selection-title">
-        <nav className="selection-nav" aria-label="画面の移動">
-          <button className="back-button" type="button" onClick={() => setScreen(screen === 'colors' ? (cards.length ? 'field' : 'theme') : 'colors')}>
-            ← {screen === 'colors' ? (cards.length ? '配置に戻る' : 'テーマを選び直す') : '色を選び直す'}
-          </button>
-          <span className="step-label">{screen === 'colors' ? '02 / 色を選ぶ' : '03 / 言葉を選ぶ'}</span>
-        </nav>
-        <p className="eyebrow">{screen === 'colors' ? 'CHOOSE YOUR COLOR' : 'FIND YOUR WORD'}</p>
-        {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
-        <h1 ref={heading} tabIndex={-1} id="selection-title">
-          {screen === 'colors' ? '今、気になる色は？' : '今、心にとまる言葉は？'}
-        </h1>
-        <p className="lead">{screen === 'colors' ? `${theme?.prompt ? `${theme.prompt}、` : ''}直感でひとつ。` : '気になる言葉をひとつ。'}</p>
-        {screen === 'colors' ? (
-          <div className="color-wheel" role="group" aria-label="色を1つ選ぶ">
-            <img src={`${import.meta.env.BASE_URL}assets/color-wheel.png`} width="2000" height="2000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
-            {COLORS.map(item => (
-              <button className={`wheel-hit wheel-hit--${item.key}`} key={item.key} type="button"
-                aria-label={item.name} title={item.name}
-                onClick={() => selectColor(item)} />
-            ))}
-          </div>
-        ) : color && (
-          <>
-            <p className="chosen-color">選んだ色：{color.name}</p>
-            <div className="keyword-grid" role="group" aria-label={`${color.name}のキーワードを1つ選ぶ`}>
-              {keywordsFor(color).map(item => (
-                <button key={item.id} className="keyword-choice" type="button" aria-pressed={keyword?.id === item.id}
-                  style={{ background: item.bg, color: item.ink }} onClick={() => setKeyword(item)}>
-                  {item.word}<span className="selection-check" aria-hidden="true">{keyword?.id === item.id ? '✓' : ''}</span>
-                </button>
-              ))}
-            </div>
-            <div className="selection-summary">
-              {keyword ? <SelectedCard key={keyword.id} keyword={keyword}
-                originalWord={keywordsFor(color).find(item => item.id === keyword.id)!.word}
-                onChange={setKeyword} onPlace={placeCard} /> : <p className="hint">選んだ言葉が、ここに表示されます。</p>}
-            </div>
-          </>
-        )}
-      </section>}
+      </section> : <WordPicker heading={heading} theme={theme} picked={picked} onPicked={setPicked} open={open} onOpen={setOpen}
+        backLabel={cards.length ? '配置に戻る' : 'テーマを選び直す'} onBack={() => setScreen(cards.length ? 'field' : 'theme')}
+        doneLabel={cards.length ? '追加する' : '並べる'} onDone={() => {
+          if (selectedField) { placePicked(); setScreen('field') } else setScreen('fields')
+        }} />}
       <footer><span>曼荼羅palette</span><span>色を選ぶ。言葉を置く。自分を眺める。</span></footer>
     </main>
   )
