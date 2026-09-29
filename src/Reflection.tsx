@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { PlacedCard } from './MandalaField'
-import { QUESTIONS } from './guide'
-import type { Notes, Theme } from './guide'
+import { QUESTIONS, TRIANGLE_SPOTS } from './guide'
+import type { Field, Notes, Theme } from './guide'
 
 const font = '"Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif'
 const serif = '"Yu Mincho", "Hiragino Mincho ProN", serif'
@@ -39,8 +39,13 @@ function today() {
 const toBlob = (canvas: HTMLCanvasElement) => new Promise<Blob>((resolve, reject) =>
   canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), 'image/png'))
 
-export default function Reflection({ cards, artwork, theme, notes, onNotes, showWords, onShowWords, onBack, onHome }: {
-  cards: PlacedCard[]; artwork: string; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
+// Cards whose center sits near a triangle vertex count as placed in that spot.
+function wordsAt(cards: PlacedCard[], spot: typeof TRIANGLE_SPOTS[number]) {
+  return cards.filter(card => Math.hypot(card.x - spot.x, card.y - spot.y) < .16).map(card => card.word)
+}
+
+export default function Reflection({ cards, artwork, field, theme, notes, onNotes, showWords, onShowWords, onBack, onHome }: {
+  cards: PlacedCard[]; artwork: string; field: Field; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
   showWords: boolean; onShowWords: (show: boolean) => void; onBack: () => void; onHome: () => void
 }) {
   const [preview, setPreview] = useState('')
@@ -84,12 +89,13 @@ export default function Reflection({ cards, artwork, theme, notes, onNotes, show
   useEffect(() => () => { if (saved) URL.revokeObjectURL(saved.url) }, [saved])
   useEffect(() => { setSaved(null) }, [notes, preview])
 
-  const answered = QUESTIONS.filter(question => notes.questionIds.includes(question.id) && notes.answers[question.id]?.trim())
+  const questions = QUESTIONS.filter(question => !question.field || question.field === field)
+  const answered = questions.filter(question => notes.questionIds.includes(question.id) && notes.answers[question.id]?.trim())
 
   function toggleQuestion(id: string) {
     const questionIds = notes.questionIds.includes(id)
       ? notes.questionIds.filter(item => item !== id)
-      : QUESTIONS.map(question => question.id).filter(item => item === id || notes.questionIds.includes(item))
+      : questions.map(question => question.id).filter(item => item === id || notes.questionIds.includes(item))
     onNotes({ ...notes, questionIds })
   }
 
@@ -102,12 +108,19 @@ export default function Reflection({ cards, artwork, theme, notes, onNotes, show
       measure.font = `44px ${serif}`
       const titleLines = notes.title.trim() ? lines(measure, notes.title.trim(), 1200) : []
       measure.font = `25px ${font}`
-      const blocks = answered.map(question => {
+      const spots = field === 'triangle' ? [{
+        asked: ['三角形の3つの場所'],
+        answer: TRIANGLE_SPOTS.map(spot => {
+          const words = wordsAt(cards, spot)
+          return `${spot.number} ${spot.name}${words.length ? `：${words.join('、')}` : ''}`
+        }).flatMap(line => { measure.font = `28px ${font}`; return lines(measure, line, 1080) }),
+      }] : []
+      const blocks = [...spots, ...answered.map(question => {
         measure.font = `25px ${font}`
         const asked = lines(measure, question.text, 1080)
         measure.font = `28px ${font}`
         return { asked, answer: lines(measure, notes.answers[question.id]!.trim(), 1080) }
-      })
+      })]
       const artTop = 100 + titleLines.length * 60 + (titleLines.length ? 20 : 0)
       const textTop = artTop + 1200 + 40
       const textHeight = (theme && theme.id !== 'free' ? 50 : 0)
@@ -159,19 +172,34 @@ export default function Reflection({ cards, artwork, theme, notes, onNotes, show
       {showWords ? 'キーワードを隠す' : 'キーワードを表示する'}
     </button>
 
+    {field === 'triangle' && <div className="spot-meanings">
+      <h2>三角形の3つの場所</h2>
+      <p>置いた場所に、こんな見方をあててみると…。当てはまらなくても大丈夫です。</p>
+      <ul>
+        {TRIANGLE_SPOTS.map(spot => {
+          const words = wordsAt(cards, spot)
+          return <li key={spot.number}>
+            <span className="spot-number" aria-hidden="true">{spot.number}</span>
+            <span><strong>{spot.name}</strong><small>{spot.where}・{spot.note}</small>
+              {words.length > 0 && <span className="spot-words">{words.join('、')}</span>}</span>
+          </li>
+        })}
+      </ul>
+    </div>}
+
     <div className="story-editor">
       <h2>眺めて、問いかけてみる</h2>
-      <p>気になる問いだけ選んで、答えてみてください。全部答えなくて大丈夫です。<br />意味を決めるのは、あなた自身です。</p>
+      <p>気になる問いだけ選んでみてください。全部でなくて大丈夫です。<br />はっきりした答えでなくても、ぼんやりした感じや、ひと言だけでも。<br />言葉にせず、眺めるだけでもかまいません。</p>
       <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
-        {QUESTIONS.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
+        {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
           onClick={() => toggleQuestion(question.id)}>
           <span aria-hidden="true">{notes.questionIds.includes(question.id) ? '✓' : '＋'}</span>{question.text}
         </button>)}
       </div>
-      {QUESTIONS.filter(question => notes.questionIds.includes(question.id)).map(question => <div className="answer" key={question.id}>
+      {questions.filter(question => notes.questionIds.includes(question.id)).map(question => <div className="answer" key={question.id}>
         <label htmlFor={`answer-${question.id}`}>{question.text}</label>
         <textarea id={`answer-${question.id}`} rows={question.id === 'story' ? 6 : 3} maxLength={2000}
-          value={notes.answers[question.id] ?? ''} placeholder="浮かんだことを、あなたの言葉で。"
+          value={notes.answers[question.id] ?? ''} placeholder="浮かんだことを、そのままに。"
           onChange={event => onNotes({ ...notes, answers: { ...notes.answers, [question.id]: event.target.value } })} />
       </div>)}
       <div className="answer">

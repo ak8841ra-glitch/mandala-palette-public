@@ -5,11 +5,9 @@ import SelectedCard from './SelectedCard'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
 import type { PlacedCard } from './MandalaField'
-import { THEMES, emptyNotes } from './guide'
-import type { Layout, Notes, Theme } from './guide'
+import { FIELDS as fields, THEMES, emptyNotes } from './guide'
+import type { Field, Notes, Theme } from './guide'
 
-const fields = ['triangle', 'horizontal', 'free'] as const
-type Field = typeof fields[number]
 const descriptions = ['小花が三角形に広がる模様', '小花が横一列に続く模様', '小花が円状に広がる模様']
 
 const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
@@ -22,7 +20,7 @@ export default function App() {
     setScreen('home')
   }
   const [theme, setTheme] = useState<Theme | null>(null)
-  const [layout, setLayout] = useState<Layout>('distance')
+  const [showGuide, setShowGuide] = useState(true)
   const [notes, setNotes] = useState<Notes>(emptyNotes)
   const [showWords, setShowWords] = useState(true)
   const [selectedField, setSelectedField] = useState<Field | null>(null)
@@ -48,7 +46,7 @@ export default function App() {
     setSelectedField(null)
     setNotes(emptyNotes())
     setTheme(null)
-    setLayout('distance')
+    setShowGuide(true)
     setShowWords(true)
     resumeScreen.current = null
     setScreen('theme')
@@ -113,7 +111,7 @@ export default function App() {
             <img src={`${import.meta.env.BASE_URL}assets/field-${field}.svg`} alt={descriptions[index]} draggable={false} />
           </button>)}
         </div>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField layout={layout} onLayout={setLayout} theme={theme} onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
+      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} field={selectedField ?? 'triangle'} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField field={selectedField ?? 'triangle'} showGuide={showGuide} onShowGuide={setShowGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
         setColor(null); setKeyword(null); setScreen('colors')
       }} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">

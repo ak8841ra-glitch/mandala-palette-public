@@ -10,17 +10,34 @@ export const THEMES: readonly Theme[] = [
   { id: 'free', label: 'テーマを決めず自由に', prompt: '' },
 ]
 
-export type Layout = 'distance' | 'free'
+export const FIELDS = ['triangle', 'horizontal', 'free'] as const
+export type Field = typeof FIELDS[number]
 
-export interface Question { id: string; text: string }
+// Shown on the field while placing; the meaning of the triangle spots is revealed only after completion.
+export const FIELD_GUIDES: Record<Field, string> = {
+  triangle: '3つの○に、①→②→③の順番で置いてみてください。どれをどこに置くかは、直感で大丈夫です。',
+  horizontal: '左から右へ、過去→現在→未来。時間の流れにそって置いてみてください。',
+  free: '内側に置きたいもの、外側に置きたいもの。感じるままに置いてみてください。',
+}
 
+// Vertex positions match the three small flowers in field-triangle.svg (0–1 of the field).
+export const TRIANGLE_SPOTS = [
+  { number: '①', x: .211, y: .782, where: '左下', name: '本来の自分', note: '奥にある、もともとの自分' },
+  { number: '②', x: .790, y: .780, where: '右下', name: '表面的な自分', note: 'まわりに見せている自分' },
+  { number: '③', x: .500, y: .184, where: '上', name: '理想的な自分', note: 'こうありたいと願う自分' },
+] as const
+
+export interface Question { id: string; text: string; field?: Field }
+
+// Soft, open questions: they invite a vague feeling into words without demanding reasons.
 export const QUESTIONS: readonly Question[] = [
-  { id: 'story', text: 'この曼荼羅を眺めていると、どんなストーリーが浮かびますか？' },
-  { id: 'color', text: '一番目に入る色は？' },
-  { id: 'largest', text: '一番大きくした言葉は？' },
-  { id: 'center', text: 'なぜそれを中心に置いた？' },
-  { id: 'unexpected', text: '意外な場所にある言葉は？' },
-  { id: 'move', text: '今、動かしたくなったものは？' },
+  { id: 'story', text: 'この曼荼羅を眺めていると、どんなストーリーが浮かんできますか？' },
+  { id: 'color', text: '一番目に入る色はどれですか？その色を見ていると、どんな気持ちがそばにありそうですか？' },
+  { id: 'largest', text: '一番大きくした言葉を眺めて、なんとなく感じることはありますか？' },
+  { id: 'center', text: '中心のあたりにあるものは、今のあなたにとって、どんな存在に感じますか？' },
+  { id: 'unexpected', text: '思いがけない場所にある言葉はありますか？そこにあると、どんな感じがしますか？' },
+  { id: 'move', text: '少し動かしてみたくなるものはありますか？どこへ行きたがっているように見えますか？' },
+  { id: 'spots', text: '①②③の3つの場所を見比べて、ふと感じることはありますか？', field: 'triangle' },
 ]
 
 export interface Notes { title: string; questionIds: string[]; answers: Record<string, string> }
