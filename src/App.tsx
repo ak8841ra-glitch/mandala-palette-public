@@ -3,21 +3,23 @@ import { KEYWORDS } from './palette'
 import WordPicker from './WordPicker'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
+import MandalaMaker, { emptyMaker } from './MandalaMaker'
+import type { Maker } from './MandalaMaker'
 import type { PlacedCard } from './MandalaField'
 import { GUIDES, THEMES, emptyNotes } from './guide'
 import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
-const wheel = `${import.meta.env.BASE_URL}assets/color-wheel.png`
+const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
 
-type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection'
-const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection']
+type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
+const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
 
 // The draft lives only in this browser, so an interrupted session can resume after a reload.
 const DRAFT_KEY = 'mandala-palette:draft'
 interface Draft {
   screen: Screen; themeId: string | null; guide: Guide; cards: PlacedCard[]; picked: string[]
-  open: string[]; notes: Notes; showWords: boolean
+  open: string[]; notes: Notes; showWords: boolean; maker: Maker
 }
 function loadDraft(): Partial<Draft> {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as Partial<Draft> } catch { return {} }
@@ -50,6 +52,8 @@ export default function App() {
   const [cards, setCards] = useState<PlacedCard[]>(draft.cards ?? [])
   const [picked, setPicked] = useState<string[]>((draft.picked ?? []).filter(id => KEYWORDS.has(id)))
   const [open, setOpen] = useState<string[]>(draft.open ?? [])
+  const [maker, setMaker] = useState<Maker>(draft.maker?.layers ? draft.maker : emptyMaker())
+  const [makerColors, setMakerColors] = useState<string[]>([])
   const [confirmFresh, setConfirmFresh] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const initialRender = useRef(true)
@@ -64,9 +68,9 @@ export default function App() {
 
   useEffect(() => {
     const saved: Draft = { screen: screen === 'home' ? resumeScreen ?? 'home' : screen, themeId: theme?.id ?? null,
-      guide, cards, picked, open, notes, showWords }
+      guide, cards, picked, open, notes, showWords, maker }
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
-  }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords])
+  }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker])
 
   const hasProgress = cards.length > 0 || picked.length > 0 || hasNotes(notes)
 
@@ -99,33 +103,44 @@ export default function App() {
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
       {screen === 'home' ? <section className="intro" aria-labelledby="title">
-        <img className="home-wheel" src={wheel} width="2000" height="2000" alt="" draggable={false} />
-        <p className="eyebrow">A MOMENT FOR YOURSELF</p>
-        <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
-        <p className="lead">色と言葉を選んで、置いて、眺める。</p>
-        <p className="hint">正解はありません。</p>
+        <img className="home-logo" src={logo} width="1000" height="1000" alt="曼荼羅palette" draggable={false} />
+        <h1 ref={heading} tabIndex={-1} id="title">どれにしようかな。</h1>
+        <p className="lead">色と言葉を選んだり、曼荼羅をつくったり。<br />2〜3分から、気が向いたときに。</p>
         {confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
-          <p id="confirm-fresh-text" className="lead">今の作品を消して、はじめから作りますか？</p>
-          <p className="hint">残したい作品は、「つづきから」で戻って画像保存できます。</p>
+          <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
+          <p className="hint">はじめからにすると、途中の作品は消えます。</p>
           <div className="home-actions">
+            <button type="button" className="button-primary" onClick={() => { setConfirmFresh(false); setScreen(resumeScreen && resumeScreen !== 'make' ? resumeScreen : cards.length ? 'field' : 'pick') }}>つづきから</button>
             <button type="button" className="danger" onClick={startFresh}>消して、はじめから</button>
-            <button type="button" onClick={() => setConfirmFresh(false)}>やめる</button>
           </div>
-        </div> : <div className="home-actions">
-          {resumeScreen && <button type="button" onClick={() => setScreen(resumeScreen)}>
-            つづきから<span aria-hidden="true">→</span>
+          <button type="button" className="back-button" onClick={() => setConfirmFresh(false)}>やめる</button>
+        </div> : <>
+          <div className="entrances">
+            <button type="button" className="entrance" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>
+              <span className="entrance-name">自分を眺める</span>
+              <span className="entrance-text">色と言葉を選んで、今の気分を眺める</span>
+              <span className="entrance-meta">約3分</span>
+            </button>
+            <button type="button" className="entrance" onClick={() => { setMakerColors([]); setScreen('make') }}>
+              <span className="entrance-name">自分でつくる</span>
+              <span className="entrance-text">パーツと色を選んで、曼荼羅アートをつくる</span>
+              <span className="entrance-meta">約3分</span>
+            </button>
+          </div>
+          {resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
+            前回のつづきから<span aria-hidden="true">→</span>
           </button>}
-          <button type="button" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>はじめから<span aria-hidden="true">↗</span></button>
-        </div>}
-        <p className="hint home-note">約5分・無料・登録なし。<br />入力した内容は、外部に送られません。</p>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
+        </>}
+        <p className="hint home-note">無料・登録なし。入力した内容は、外部に送られません。</p>
+      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
+        onMake={() => { setMakerColors([...new Set(cards.map(card => card.bg))]); setScreen('make') }} /> : screen === 'make'
+        ? <MandalaMaker maker={maker} onMaker={setMaker} presetColors={makerColors} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
             ← {cards.length ? '配置に戻る' : 'トップへ戻る'}
           </button>
           <span className="step-label">01 / テーマを選ぶ</span>
         </nav>
-        <p className="eyebrow">CHOOSE YOUR THEME</p>
         <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
         <p className="lead">決めずに始めても大丈夫。</p>
         <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
@@ -137,7 +152,7 @@ export default function App() {
         </div>
       </section> : <WordPicker heading={heading} theme={theme} picked={picked} onPicked={setPicked} open={open} onOpen={setOpen}
         backLabel={cards.length ? '配置に戻る' : 'テーマを選び直す'} onBack={() => setScreen(cards.length ? 'field' : 'theme')}
-        wheel={wheel} doneLabel={cards.length ? '追加する' : '並べる'} onDone={() => { placePicked(); setScreen('field') }} />}
+        wheel={logo} doneLabel={cards.length ? '追加する' : '並べる'} onDone={() => { placePicked(); setScreen('field') }} />}
       <footer><span>曼荼羅palette</span><span>色を選ぶ。言葉を置く。自分を眺める。</span></footer>
     </main>
   )

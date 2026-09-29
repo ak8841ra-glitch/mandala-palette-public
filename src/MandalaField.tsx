@@ -95,7 +95,6 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   return <section className="selection field-section" aria-labelledby="field-title"
     onPointerDown={event => { if (!(event.target as HTMLElement).closest('.placed-card, .card-size-controls')) setSelectedId(null) }}
     onKeyDown={event => { if (event.key === 'Escape') setSelectedId(null) }}>
-    <p className="eyebrow">MAKE YOUR OWN SPACE</p>
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
     <div className="guide-picker" role="group" aria-labelledby="guide-label">

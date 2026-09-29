@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
-import { COLORS, FAMILIES, KEYWORDS, keywordsFor } from './palette'
+import { FAMILIES, KEYWORDS, keywordsFor } from './palette'
 import type { Theme } from './guide'
 
 // The chip previews every shade of the family, like a slice of the color wheel.
@@ -9,8 +9,12 @@ const swatch = (key: string) => {
   return `conic-gradient(${shades.map((bg, i) => `${bg} ${i / shades.length * 360}deg ${(i + 1) / shades.length * 360}deg`).join(', ')})`
 }
 
-// White and black are two halves of the wheel's top slot but open one shared family.
-const familyOf = (colorKey: string) => colorKey === 'black' ? 'white' : colorKey
+// Centers of the eight color dishes in logo-palette.jpg, as % of the image. FAMILIES runs clockwise from the top,
+// and white and black share the top dish, just as they share one family of words.
+const slot = (index: number) => {
+  const angle = index * Math.PI / 4
+  return { left: `${50 + 27.8 * Math.sin(angle)}%`, top: `${48.6 - 27.8 * Math.cos(angle)}%` }
+}
 
 export default function WordPicker({ heading, wheel, theme, picked, onPicked, open, onOpen, backLabel, onBack, doneLabel, onDone }: {
   heading: Ref<HTMLHeadingElement>
@@ -52,16 +56,15 @@ export default function WordPicker({ heading, wheel, theme, picked, onPicked, op
     <p className="hint">いくつ開いても、何枚選んでも大丈夫です。</p>
 
     <div ref={wheelRef} className="color-wheel" role="group" aria-label="色を開く・閉じる">
-      <img src={wheel} width="2000" height="2000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
-      {COLORS.map(item => {
-        const key = familyOf(item.key)
-        const name = FAMILIES.find(family => family.key === key)!.name
-        return <button className={`wheel-hit wheel-hit--${item.key}`} key={item.key} type="button"
-          aria-pressed={open.includes(key)} aria-label={`${name}${count(key) ? `（${count(key)}枚選択中）` : ''}`} title={name}
-          onClick={() => toggleColor(key)} />
+      <img src={wheel} width="1000" height="1000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
+      {FAMILIES.map((family, index) => {
+        const { left, top } = slot(index)
+        return <button className="wheel-hit" key={family.key} type="button" style={{ left, top }}
+          aria-pressed={open.includes(family.key)} aria-label={`${family.name}${count(family.key) ? `（${count(family.key)}枚選択中）` : ''}`} title={family.name}
+          onClick={() => toggleColor(family.key)}>
+          {count(family.key) > 0 && <span className="wheel-count" aria-hidden="true">{count(family.key)}</span>}
+        </button>
       })}
-      {FAMILIES.filter(family => count(family.key) > 0).map(family =>
-        <span key={family.key} className={`wheel-count wheel-count--${family.key}`} aria-hidden="true">{count(family.key)}</span>)}
     </div>
 
     <div className="palette-bar" data-shown={!wheelVisible} role="group" aria-label="色を開く・閉じる（小さなパレット）" aria-hidden={wheelVisible}>
