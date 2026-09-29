@@ -93,3 +93,30 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .return-home-action { margin: 28px 0; }
 
 .home-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+
+.theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 560px; margin: 0 auto; }
+.theme-choice { justify-content: center; min-height: 64px; font-size: 16px; letter-spacing: .06em; }
+.theme-choice:last-child { grid-column: 1 / -1; border-style: dashed; }
+.theme-choice[aria-pressed="true"], .layout-switch button[aria-pressed="true"] { background: #e9e2f0; color: #342b40; }
+.theme-badge { display: inline-block; margin: 0 0 20px; padding: 4px 14px; border: 1px solid #a4906f88; border-radius: 999px; color: #d3c6b5; font-size: 12px; letter-spacing: .08em; }
+@media (max-width: 600px) { .theme-grid { grid-template-columns: 1fr; } }
+
+.layout-switch { display: inline-flex; gap: 8px; }
+.layout-switch button { min-height: 44px; padding: 8px 18px; border-radius: 999px; font-size: 13px; }
+.distance-guide { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: #9480ad; stroke-width: .25; stroke-dasharray: 1 1.2; }
+.distance-guide text { fill: #7a6a90; stroke: none; font-size: 2.6px; text-anchor: middle; letter-spacing: .1px; }
+.field-meaning { margin: 20px auto 0; color: #d3c6b5; font-size: 13px; line-height: 1.9; letter-spacing: .06em; }
+.field-meaning span { color: #aebdd0; font-size: 11px; }
+
+.story-editor h2 { font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; font-weight: 400; font-size: 22px; letter-spacing: .08em; margin: 0 0 8px; }
+.question-choices { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 28px; }
+.question-choices button { justify-content: flex-start; gap: 10px; min-height: 44px; padding: 8px 16px; border-radius: 999px; font-size: 13px; text-align: left; }
+.question-choices button[aria-pressed="true"] { background: #e9e2f0; color: #342b40; }
+.answer { margin: 0 0 26px; }
+.answer label { display: block; font-size: 17px; line-height: 1.8; margin-bottom: 10px; }
+.answer input { width: 100%; min-height: 52px; padding: 10px 16px; border: 1px solid #b7a7c9; border-radius: 10px; background: #fff; color: #34313c; font: inherit; font-size: 16px; }
+.answer input:focus-visible, .story-editor textarea:focus-visible { outline: 2px solid #d8a88a; outline-offset: 3px; }
+.saved-result { max-width: 520px; margin: 24px auto; }
+.saved-result p { font-size: 13px; line-height: 1.9; color: #d3c6b5; }
+.saved-result img { display: block; width: 100%; height: auto; border-radius: 8px; margin: 12px 0; }
+.saved-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px; }

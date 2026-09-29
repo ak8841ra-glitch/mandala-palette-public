@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction, PointerEvent } from 'react'
 import type { Keyword } from './palette'
+import type { Layout, Theme } from './guide'
 
 export interface PlacedCard extends Keyword {
   instanceId: string
@@ -16,7 +17,10 @@ const sizes = { small: { label: '小', diameter: .20 }, medium: { label: '中', 
 // Reserve room for the largest size so resizing never moves the center.
 const clamp = (value: number) => Math.max(.18, Math.min(.82, value))
 
-export default function MandalaField({ cards, setCards, onAdd, artwork, onChangeField, onComplete }: {
+export default function MandalaField({ cards, setCards, onAdd, artwork, onChangeField, onComplete, layout, onLayout, theme }: {
+  layout: Layout
+  onLayout: (layout: Layout) => void
+  theme: Theme | null
   onComplete: () => void
   artwork: string
   onChangeField: () => void
@@ -61,9 +65,21 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
     onKeyDown={event => { if (event.key === 'Escape') setSelectedId(null) }}>
     <p className="eyebrow">MAKE YOUR OWN SPACE</p>
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
-    <p className="description" id="field-help">丸いカードを、好きな場所へ動かしてみてください。<br />重ねても、何度動かしても大丈夫です。</p>
+    {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
+    <p className="description" id="field-help">{layout === 'distance'
+      ? <>自分に近いと感じるものは中心へ、遠いと感じるものは外側へ。<br />重ねても、何度動かしても大丈夫です。</>
+      : <>丸いカードを、好きな場所へ動かしてみてください。<br />重ねても、何度動かしても大丈夫です。</>}</p>
+    <div className="layout-switch" role="group" aria-label="置き方">
+      <button type="button" aria-pressed={layout === 'distance'} onClick={() => onLayout('distance')}>距離で置く</button>
+      <button type="button" aria-pressed={layout === 'free'} onClick={() => onLayout('free')}>自由に置く</button>
+    </div>
     <div ref={field} className="mandala-field" role="group" aria-label="曼荼羅フィールド" aria-describedby="field-help">
       <img className="field-art" src={artwork} alt="" draggable={false} />
+      {layout === 'distance' && <svg className="distance-guide" viewBox="0 0 100 100" aria-hidden="true">
+        {[14, 28, 42].map(r => <circle key={r} cx="50" cy="50" r={r} />)}
+        <text x="50" y="51.5">自分に近い</text>
+        <text x="50" y="97">自分から遠い</text>
+      </svg>}
       {cards.map(card => <button key={card.instanceId} id={`card-${card.instanceId}`} type="button" className="placed-card"
         aria-pressed={selectedId === card.instanceId}
         aria-label={`${card.word}（${card.colorName}・${cards.indexOf(card) + 1}枚目）を移動`}
@@ -115,6 +131,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onChange
           requestAnimationFrame(() => document.getElementById(`card-${restored.instanceId}`)?.focus({ preventScroll: true }))
         }}>元に戻す</button></>}
     </div>
+    <p className="field-meaning">大きさ＝大切さ　位置＝自分との距離　色＝感覚<br /><span>決まりではありません。言葉以外でも、意味を表してみてください。</span></p>
     <p className="field-hint">カードを選ぶと、大きさの変更や削除ができます。<br />指やマウスでドラッグできます。キーボードではカードを選び、矢印キーで移動できます。</p>
     <div className="field-actions"><button type="button" onClick={onAdd}>もう1枚追加 <span aria-hidden="true">＋</span></button>
     <button type="button" className="back-button" onClick={onChangeField}>フィールドを選び直す</button></div>

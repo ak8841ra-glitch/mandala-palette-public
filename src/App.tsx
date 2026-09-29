@@ -5,19 +5,25 @@ import SelectedCard from './SelectedCard'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
 import type { PlacedCard } from './MandalaField'
+import { THEMES, emptyNotes } from './guide'
+import type { Layout, Notes, Theme } from './guide'
 
 const fields = ['triangle', 'horizontal', 'free'] as const
 type Field = typeof fields[number]
 const descriptions = ['小花が三角形に広がる模様', '小花が横一列に続く模様', '小花が円状に広がる模様']
 
+const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
+
 export default function App() {
-  const [screen, setScreen] = useState<'home' | 'colors' | 'keywords' | 'fields' | 'field' | 'reflection'>('home')
+  const [screen, setScreen] = useState<'home' | 'theme' | 'colors' | 'keywords' | 'fields' | 'field' | 'reflection'>('home')
   const resumeScreen = useRef<typeof screen | null>(null)
   function goHome() {
     if (screen !== 'home') resumeScreen.current = screen
     setScreen('home')
   }
-  const [story, setStory] = useState('')
+  const [theme, setTheme] = useState<Theme | null>(null)
+  const [layout, setLayout] = useState<Layout>('distance')
+  const [notes, setNotes] = useState<Notes>(emptyNotes)
   const [showWords, setShowWords] = useState(true)
   const [selectedField, setSelectedField] = useState<Field | null>(null)
   const [cards, setCards] = useState<PlacedCard[]>([])
@@ -35,15 +41,17 @@ export default function App() {
   }, [screen])
 
   function startFresh() {
-    if ((cards.length > 0 || color || keyword || story) && !window.confirm('今の作品と入力した文章を消して、はじめから作りますか？残したい作品は、先に「つづきから」で戻って画像保存してください。')) return
+    if ((cards.length > 0 || color || keyword || hasNotes(notes)) && !window.confirm('今の作品と入力した文章を消して、はじめから作りますか？残したい作品は、先に「つづきから」で戻って画像保存してください。')) return
     setCards([])
     setColor(null)
     setKeyword(null)
     setSelectedField(null)
-    setStory('')
+    setNotes(emptyNotes())
+    setTheme(null)
+    setLayout('distance')
     setShowWords(true)
     resumeScreen.current = null
-    setScreen('colors')
+    setScreen('theme')
   }
 
   function selectColor(nextColor: PaletteColor) {
@@ -94,7 +102,7 @@ export default function App() {
             if (selectedField) setScreen('field')
             else { setCards(previous => previous.slice(0, -1)); setScreen('keywords') }
           }}>← {selectedField ? '配置に戻る' : 'カードに戻る'}</button>
-          <span className="step-label">03 / フィールドを選ぶ</span>
+          <span className="step-label">04 / フィールドを選ぶ</span>
         </nav>
         <h1 ref={heading} tabIndex={-1} id="field-choice-title">どの模様に、置いてみる？</h1>
         <p className="description">気になる画像を選んでください。<br />どの模様でも、好きな場所に自由に置けます。</p>
@@ -105,20 +113,38 @@ export default function App() {
             <img src={`${import.meta.env.BASE_URL}assets/field-${field}.svg`} alt={descriptions[index]} draggable={false} />
           </button>)}
         </div>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} story={story} onStory={setStory} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
+      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField layout={layout} onLayout={setLayout} theme={theme} onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
         setColor(null); setKeyword(null); setScreen('colors')
-      }} /> : <section className="selection" aria-labelledby="selection-title">
+      }} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
-          <button className="back-button" type="button" onClick={() => setScreen(screen === 'colors' ? (cards.length ? 'field' : 'home') : 'colors')}>
-            ← {screen === 'colors' ? (cards.length ? '配置に戻る' : 'トップへ戻る') : '色を選び直す'}
+          <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
+            ← {cards.length ? '配置に戻る' : 'トップへ戻る'}
           </button>
-          <span className="step-label">{screen === 'colors' ? '01 / 色を選ぶ' : '02 / 言葉を選ぶ'}</span>
+          <span className="step-label">01 / テーマを選ぶ</span>
+        </nav>
+        <p className="eyebrow">CHOOSE YOUR THEME</p>
+        <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
+        <p className="description">テーマを決めると、色や言葉を選ぶときの手がかりになります。<br className="desktop-break" />決めずに、自由に始めても大丈夫です。</p>
+        <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
+          {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
+            aria-pressed={theme?.id === item.id}
+            onClick={() => { setTheme(item); setScreen(cards.length ? 'field' : 'colors') }}>
+            {item.label}
+          </button>)}
+        </div>
+      </section> : <section className="selection" aria-labelledby="selection-title">
+        <nav className="selection-nav" aria-label="画面の移動">
+          <button className="back-button" type="button" onClick={() => setScreen(screen === 'colors' ? (cards.length ? 'field' : 'theme') : 'colors')}>
+            ← {screen === 'colors' ? (cards.length ? '配置に戻る' : 'テーマを選び直す') : '色を選び直す'}
+          </button>
+          <span className="step-label">{screen === 'colors' ? '02 / 色を選ぶ' : '03 / 言葉を選ぶ'}</span>
         </nav>
         <p className="eyebrow">{screen === 'colors' ? 'CHOOSE YOUR COLOR' : 'FIND YOUR WORD'}</p>
+        {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
         <h1 ref={heading} tabIndex={-1} id="selection-title">
           {screen === 'colors' ? '今、気になる色は？' : '今、心にとまる言葉は？'}
         </h1>
-        <p className="description">{screen === 'colors' ? '直感で、ひとつ選んでみてください。' : '12の言葉から、気になるひとつを選んでください。'}</p>
+        <p className="description">{screen === 'colors' ? `${theme?.prompt ? `${theme.prompt}、` : ''}直感で、ひとつ選んでみてください。` : '12の言葉から、気になるひとつを選んでください。'}</p>
         {screen === 'colors' ? (
           <div className="color-wheel" role="group" aria-label="色を1つ選ぶ">
             <img src={`${import.meta.env.BASE_URL}assets/color-wheel.png`} width="2000" height="2000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
