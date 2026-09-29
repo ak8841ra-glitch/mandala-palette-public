@@ -66,15 +66,24 @@ a { color: var(--ink); text-underline-offset: 3px; }
 }
 
 /* Home */
-.intro { max-width: 640px; margin: 8px auto 24px; text-align: center; }
-.home-logo { display: block; width: min(78vw, 360px); height: auto; margin: 0 auto 20px; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
-.entrances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(10px, 4vw, 28px); max-width: 520px; margin: 24px auto 8px; }
-.door { flex-direction: column; justify-content: flex-start; gap: 6px; min-height: 0; padding: 0 0 14px; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.intro { max-width: 640px; margin: 4px auto 24px; text-align: center; }
+.intro h1 { margin-bottom: 6px; }
+.intro .lead { text-wrap: balance; }
+.home-logo { display: block; width: min(56vw, 300px); height: auto; margin: 0 auto 12px; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
+.entrances { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 5vw, 32px); max-width: 480px; margin: 20px auto 4px; }
+.door { flex-direction: column; justify-content: flex-start; gap: 0; min-height: 0; padding: 0 0 8px; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .door:hover { border-color: transparent; }
-.door-arch { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 4; margin-bottom: 8px; border: 1px solid var(--ink); border-radius: 999px 999px 10px 10px; background: var(--surface); box-shadow: inset 0 0 0 7px var(--surface), inset 0 0 0 8px var(--line-strong), var(--shadow); transition: transform .2s, box-shadow .2s; }
+/* The sign hangs from a nail on two cords, just above the door. */
+.door-hanger { display: block; width: 46%; height: auto; overflow: visible; fill: none; stroke: var(--ink-soft); stroke-width: 1; }
+.door-hanger circle { fill: var(--ink); stroke: none; }
+.door-sign { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; width: 88%; margin-bottom: -10px; padding: 7px 6px 8px; border: 1px solid var(--ink); border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px var(--line-strong), 0 4px 10px rgb(58 54 57 / .12); transform-origin: 50% -18px; transition: transform .3s; }
+.door:hover .door-sign, .door:focus-visible .door-sign { transform: rotate(-2deg); }
+.door-room { font-size: 10px; letter-spacing: .12em; color: var(--ink-soft); white-space: nowrap; }
+.door-name { font-family: var(--font-display); font-size: clamp(15px, 4.4vw, 19px); line-height: 1.4; letter-spacing: .08em; white-space: nowrap; }
+.door-arch { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 4 / 5; margin-bottom: 8px; border: 1px solid var(--ink); border-radius: 999px 999px 10px 10px; background: var(--surface); box-shadow: inset 0 0 0 7px var(--surface), inset 0 0 0 8px var(--line-strong), var(--shadow); transition: transform .2s, box-shadow .2s; }
 .door:hover .door-arch, .door:focus-visible .door-arch { transform: translateY(-3px); box-shadow: inset 0 0 0 7px var(--surface), inset 0 0 0 8px var(--ink), 0 12px 24px rgb(58 54 57 / .14); }
-.door-knob { position: absolute; right: 14%; top: 58%; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); box-shadow: inset 0 -2px 3px rgb(0 0 0 / .3), inset 0 1px 2px rgb(255 255 255 / .4); }
-.door-art { display: block; width: 52%; aspect-ratio: 1; }
+.door-knob { position: absolute; right: 13%; top: 60%; width: 9px; height: 9px; border-radius: 50%; background: var(--ink); box-shadow: inset 0 -2px 3px rgb(0 0 0 / .3), inset 0 1px 2px rgb(255 255 255 / .4); }
+.door-art { display: block; width: 50%; aspect-ratio: 1; margin-top: 8%; }
 .door-art--look { position: relative; }
 .door-art--look i { position: absolute; width: 46%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset 0 -4px 8px rgb(0 0 0 / .18), inset 0 2px 3px rgb(255 255 255 / .5), 0 3px 8px rgb(58 54 57 / .2); }
 .door-art--look i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(90% 70% at 32% 22%, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 55%); }
@@ -82,9 +91,9 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .door-art--look i:nth-child(2) { left: 4%; top: 46%; }
 .door-art--look i:nth-child(3) { left: 50%; top: 46%; }
 .door-art--make { background: #B8823F; mask-size: contain; mask-repeat: no-repeat; mask-position: center; -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; }
-.door-name { font-family: var(--font-display); font-size: clamp(18px, 5vw, 22px); line-height: 1.5; letter-spacing: .1em; }
-.door-text { font-size: 12px; line-height: 1.7; color: var(--ink-soft); }
-.door-meta { font-size: 11px; color: var(--ink-soft); padding: 1px 10px; border: 1px solid var(--line); border-radius: 999px; }
+.door-text { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; font-size: 12px; color: var(--ink-soft); }
+.door-text span { font-size: 11px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; }
+@media (prefers-reduced-motion: reduce) { .door-sign, .door-arch { transition: none; } }
 .resume { margin-top: 4px; }
 .home-note { margin-top: 16px; }
 .home-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
@@ -229,3 +238,11 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .layer-thumb .part-icon { width: 34px; height: 34px; }
 .layer-name { display: flex; flex-direction: column; min-width: 0; font-size: 13px; line-height: 1.4; }
 .layer-name small { font-size: 11px; opacity: .75; }
+
+/* Wide screens: logo on the left, the two doors on the right, all in the first view. */
+@media (min-width: 900px) {
+  .intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 56px; max-width: 960px; margin-top: 24px; }
+  .home-logo { width: min(100%, 400px); margin: 0 auto; }
+  .entrances { max-width: 400px; }
+}
+@media (max-width: 380px) { .intro .lead { font-size: 14px; } .entrances { margin-top: 14px; } }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { KEYWORDS } from './palette'
 import WordPicker from './WordPicker'
 import MandalaField from './MandalaField'
@@ -43,6 +44,19 @@ function ring(count: number, index: number) {
   const angle = -Math.PI / 2 + index * 2 * Math.PI / count
   const radius = count > 4 ? .28 : .22
   return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius }
+}
+
+// An entrance drawn as a door with a hanging sign that names the room behind it.
+function Door({ room, name, note, art, onOpen }: { room: string; name: string; note: string; art: ReactNode; onOpen: () => void }) {
+  return <button type="button" className="door" aria-label={`${name}（${room}）：${note}・約3分`} onClick={onOpen}>
+    <svg className="door-hanger" viewBox="0 0 100 18" aria-hidden="true"><path d="M24 18 L50 3 L76 18" /><circle cx="50" cy="3" r="2.2" /></svg>
+    <span className="door-sign" aria-hidden="true">
+      <span className="door-room">{room}</span>
+      <span className="door-name">{name}</span>
+    </span>
+    <span className="door-arch" aria-hidden="true">{art}<span className="door-knob" /></span>
+    <span className="door-text" aria-hidden="true">{note}<span>約3分</span></span>
+  </button>
 }
 
 export default function App() {
@@ -114,6 +128,7 @@ export default function App() {
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
       {screen === 'home' ? <section className="intro" aria-labelledby="title">
         <img className="home-logo" src={logo} width="1000" height="1000" alt="曼荼羅palette" draggable={false} />
+        <div className="intro-body">
         <h1 ref={heading} tabIndex={-1} id="title">どれにしようかな。</h1>
         <p className="lead">色と言葉を選んだり、曼荼羅をつくったり。<br />2〜3分から、気が向いたときに。</p>
         {confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
@@ -127,30 +142,17 @@ export default function App() {
         </div> : <>
           {/* Two doors side by side, even on a phone: neither entrance is ranked above the other. */}
           <div className="entrances">
-            <button type="button" className="door" onClick={() => hasProgress ? setConfirmFresh(true) : startFresh()}>
-              <span className="door-arch" aria-hidden="true">
-                <span className="door-art door-art--look"><i style={{ background: '#EF4060' }} /><i style={{ background: '#3E6CA8' }} /><i style={{ background: '#F2E024' }} /></span>
-                <span className="door-knob" />
-              </span>
-              <span className="door-name">自分を<br />眺める</span>
-              <span className="door-text">色と言葉で、<br />今の気分を眺める</span>
-              <span className="door-meta">約3分</span>
-            </button>
-            <button type="button" className="door" onClick={() => { setPresets([]); setScreen('make') }}>
-              <span className="door-arch" aria-hidden="true">
-                <span className="door-art door-art--make" style={{ maskImage: `url(${partsBase}ring_petal.png)`, WebkitMaskImage: `url(${partsBase}ring_petal.png)` }} />
-                <span className="door-knob" />
-              </span>
-              <span className="door-name">自分で<br />つくる</span>
-              <span className="door-text">パーツと色で、<br />曼荼羅アートを</span>
-              <span className="door-meta">約3分</span>
-            </button>
+            <Door room="色と言葉の部屋" name="自分を眺める" note="今の気分を眺める" onOpen={() => hasProgress ? setConfirmFresh(true) : startFresh()}
+              art={<span className="door-art door-art--look"><i style={{ background: '#EF4060' }} /><i style={{ background: '#3E6CA8' }} /><i style={{ background: '#F2E024' }} /></span>} />
+            <Door room="曼荼羅のアトリエ" name="自分でつくる" note="作品をつくる" onOpen={() => { setPresets([]); setScreen('make') }}
+              art={<span className="door-art door-art--make" style={{ maskImage: `url(${partsBase}ring_petal.png)`, WebkitMaskImage: `url(${partsBase}ring_petal.png)` }} />} />
           </div>
           {resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
             前回のつづきから<span aria-hidden="true">→</span>
           </button>}
         </>}
         <p className="hint home-note">無料・登録なし。入力した内容は、外部に送られません。</p>
+        </div>
       </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
         onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
         ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
