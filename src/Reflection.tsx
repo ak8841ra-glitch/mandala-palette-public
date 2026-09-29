@@ -174,7 +174,7 @@ export default function Reflection({ cards, artwork, field, theme, notes, onNote
 
     {field === 'triangle' && <div className="spot-meanings">
       <h2>三角形の3つの場所</h2>
-      <p>置いた場所に、こんな見方をあててみると…。当てはまらなくても大丈夫です。</p>
+      <p>{theme && theme.id !== 'free' ? `テーマ「${theme.label}」に重ねて、` : ''}置いた場所に、こんな見方をあててみると…。<br />何の姿として眺めるかは、あなたが決めてください。当てはまらなくても大丈夫です。</p>
       <ul>
         {TRIANGLE_SPOTS.map(spot => {
           const words = wordsAt(cards, spot)

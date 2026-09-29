@@ -22,9 +22,9 @@ export const FIELD_GUIDES: Record<Field, string> = {
 
 // Vertex positions match the three small flowers in field-triangle.svg (0–1 of the field).
 export const TRIANGLE_SPOTS = [
-  { number: '①', x: .211, y: .782, where: '左下', name: '本来の自分', note: '奥にある、もともとの自分' },
-  { number: '②', x: .790, y: .780, where: '右下', name: '表面的な自分', note: 'まわりに見せている自分' },
-  { number: '③', x: .500, y: .184, where: '上', name: '理想的な自分', note: 'こうありたいと願う自分' },
+  { number: '①', x: .211, y: .782, where: '左下', name: '本来の姿', note: '奥にある、もともとのもの' },
+  { number: '②', x: .790, y: .780, where: '右下', name: '表面的な姿', note: '外から見えている、表に出ているもの' },
+  { number: '③', x: .500, y: .184, where: '上', name: '理想的な姿', note: 'こうなったらいいなと願うもの' },
 ] as const
 
 export interface Question { id: string; text: string; field?: Field }
