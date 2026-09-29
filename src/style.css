@@ -66,28 +66,59 @@ a { color: var(--ink); text-underline-offset: 3px; }
 }
 
 /* Home */
-.intro { max-width: 640px; margin: 4px auto 24px; text-align: center; }
-.intro h1 { margin-bottom: 6px; }
-.intro .lead { text-wrap: balance; }
-.home-logo { display: block; width: min(52vw, 240px); height: auto; margin: 0 auto; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
-/* First view: logo, one question, two equal room buttons, and a hint to scroll. */
-.intro-top { display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 8px; }
-.intro-catch { margin: 14px 0 18px; font-family: var(--font-display); font-size: clamp(24px, 6.4vw, 30px); letter-spacing: .12em; }
-.room-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; max-width: 440px; }
-.room-pick { flex-direction: column; gap: 2px; min-height: 76px; padding: 12px 8px; border-color: var(--ink); border-radius: 18px; background: var(--surface); }
-.room-pick:hover { background: #F3ECDF; }
-.room-kicker { display: block; margin: 0; font-size: 11px; letter-spacing: .14em; color: var(--ink-soft); }
-.room-name { display: block; margin: 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(18px, 5vw, 20px); letter-spacing: .08em; line-height: 1.5; color: var(--ink); }
-.peek { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; padding: 8px 12px; font-size: 13px; color: var(--ink-soft); text-decoration: none; }
-.peek span { animation: nudge 2s ease-in-out infinite; }
-@keyframes nudge { 50% { transform: translateY(4px); } }
+/* Museum home: drifting hero, floor guide, then an elevator ride through the floors. */
+.museum { max-width: 460px; margin: 0 auto 24px; text-align: center; }
+.hero { position: relative; padding: 18px 0 8px; }
+.home-logo { position: relative; z-index: 1; display: block; width: min(50vw, 220px); height: auto; margin: 0 auto; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
+.drift { position: absolute; inset: 0; pointer-events: none; }
+.drift-dot, .drift-part { position: absolute; display: block; aspect-ratio: 1; border-radius: 50%; animation: drift 9s ease-in-out infinite; }
+.drift-dot { box-shadow: inset 0 -3px 6px rgb(0 0 0 / .16), inset 0 2px 3px rgb(255 255 255 / .55), 0 3px 8px rgb(58 54 57 / .16); }
+.drift-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(90% 70% at 32% 22%, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 55%); }
+.drift-part { width: 30px; border-radius: 0; background: #B8823F; opacity: .8; mask-size: contain; mask-repeat: no-repeat; mask-position: center; -webkit-mask-size: contain; -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; animation-duration: 12s; }
+@keyframes drift { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 33% { transform: translate(6px, -10px) rotate(8deg); } 66% { transform: translate(-5px, 6px) rotate(-6deg); } }
 
-/* Room previews, one per scroll section; the same layout for both rooms. */
-.room { max-width: 440px; margin: 16px auto 0; padding: 36px 0 8px; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
-.room + .room { margin-top: 40px; }
-.room .room-name { font-size: clamp(24px, 6.4vw, 28px); margin-bottom: 8px; }
-.room .lead { margin-bottom: 20px; }
-.room-window { position: relative; width: min(100%, 300px); aspect-ratio: 5 / 6; margin: 0 auto 24px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 999px 999px 18px 18px; background: var(--surface); box-shadow: var(--shadow); }
+.floor-guide { margin-top: 18px; padding: 16px 14px 10px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface); }
+.floor-guide h2 { display: flex; flex-direction: column; align-items: center; margin: 0 0 12px; font-family: var(--font-ui); font-size: 11px; font-weight: 400; letter-spacing: .2em; color: var(--ink-soft); }
+.floor-guide h2 span { font-family: var(--font-display); font-size: 20px; letter-spacing: .18em; color: var(--ink); }
+.floor-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 10px; margin-top: 18px; }
+.guide-card { position: relative; flex-direction: column; gap: 0; min-height: 88px; padding: 18px 6px 10px; border-color: var(--ink); border-radius: 16px; background: var(--bg); }
+.guide-card:hover { background: #F0E8DA; }
+.guide-card .floor-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); }
+.guide-card.is-soon { border-style: dashed; border-color: var(--line-strong); color: var(--ink-soft); }
+.guide-room { display: block; font-size: 11px; letter-spacing: .12em; color: var(--ink-soft); }
+.guide-name { display: block; font-family: var(--font-display); font-size: clamp(16px, 4.6vw, 19px); letter-spacing: .08em; line-height: 1.5; }
+.is-soon .guide-name { font-family: var(--font-ui); font-size: 13px; }
+.floor-badge { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ink); border-radius: 50%; background: var(--surface); font-family: var(--font-display); font-size: 14px; letter-spacing: 0; color: var(--ink); }
+.floor-badge--large { width: 52px; height: 52px; font-size: 20px; }
+.tour { margin-top: 6px; }
+.resume { margin-top: 8px; }
+
+.floors { position: relative; margin-top: 28px; }
+.elevator { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; justify-content: center; align-items: center; gap: 6px; margin: 0 -16px; padding: 10px 16px; background: rgb(247 242 232 / .95); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); }
+.elevator button { min-height: 0; width: 42px; height: 42px; padding: 0; font-family: var(--font-display); font-size: 15px; }
+.elevator .elevator-step { width: 36px; height: 36px; border-color: var(--line-strong); font-family: var(--font-ui); color: var(--ink-soft); }
+.elevator-floor[aria-current="true"] { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.floor { padding: 32px 0 36px; border-bottom: 1px solid var(--line); scroll-margin-top: 64px; }
+.floor-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 16px; text-align: left; }
+.floor-name { margin: 0; font-size: clamp(22px, 6vw, 26px); }
+.floor-window { position: relative; width: min(100%, 300px); aspect-ratio: 5 / 6; margin: 0 auto 20px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 999px 999px 18px 18px; background: var(--surface); box-shadow: var(--shadow); }
+/* Doors: two ivory panels that slide apart when the floor arrives. */
+.floor-door { position: absolute; top: 0; bottom: 0; width: 50%; background: linear-gradient(180deg, var(--surface), #F1E9DB); transition: transform 1.2s cubic-bezier(.6, 0, .2, 1) .25s; }
+.floor-door--left { left: 0; border-right: 1px solid var(--line-strong); }
+.floor-door--right { right: 0; border-left: 1px solid var(--line-strong); }
+.floor-door::after { content: ""; position: absolute; top: 58%; width: 3px; height: 26px; border-radius: 2px; background: var(--line-strong); }
+.floor-door--left::after { right: 10px; }
+.floor-door--right::after { left: 10px; }
+.floor.is-open .floor-door--left { transform: translateX(-101%); }
+.floor.is-open .floor-door--right { transform: translateX(101%); }
+.floor.is-soon .floor-door { transform: none; }
+/* Closed floors keep their doors shut, with a small plate hung on the front. */
+.soon-plate { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); padding: 6px 16px; border: 1px solid var(--ink); border-radius: 6px; background: var(--surface); font-size: 12px; letter-spacing: .24em; color: var(--ink); box-shadow: 0 3px 8px rgb(58 54 57 / .12); }
+.floor .lead { text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) {
+  .drift-dot, .drift-part { animation: none; }
+  .floor-door { transition: none; }
+}
 .room-steps { display: grid; gap: 10px; margin: 0 auto 16px; padding: 0; list-style: none; counter-reset: step; text-align: left; max-width: 340px; }
 .room-steps li { display: flex; align-items: center; gap: 12px; font-size: 15px; line-height: 1.6; counter-increment: step; }
 .room-steps li::before { content: counter(step); flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--ink); border-radius: 50%; font-family: var(--font-display); font-size: 14px; }
@@ -97,7 +128,6 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .scene--look { background-color: var(--surface); background-size: 150%; background-position: center; }
 .scene--look i { position: absolute; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); font-style: normal; font-size: clamp(12px, 3.6vw, 15px); box-shadow: inset 0 -4px 7px rgb(0 0 0 / .16), inset 0 2px 3px rgb(255 255 255 / .5), 0 3px 6px rgb(58 54 57 / .22); }
 .scene--look i::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(90% 70% at 32% 22%, rgb(255 255 255 / .5), rgb(255 255 255 / 0) 55%); }
-@media (prefers-reduced-motion: reduce) { .peek span { animation: none; } }
 .resume { margin-top: 4px; }
 .home-note { margin-top: 16px; }
 .home-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }

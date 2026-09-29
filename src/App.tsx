@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { KEYWORDS } from './palette'
 import WordPicker from './WordPicker'
+import Home from './Home'
+import type { RoomId } from './Home'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
 import MandalaMaker, { emptyMaker } from './MandalaMaker'
@@ -12,14 +14,9 @@ import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
+const partsBase = `${import.meta.env.BASE_URL}assets/parts/`
 // Door scenes: the atelier shows a finished おまかせ mandala; the other room shows word cards on the field.
 const atelier = `${import.meta.env.BASE_URL}assets/door-atelier-light.jpg`
-const ROOMS = [
-  { id: 'look', room: '色と言葉の部屋', name: '自分を眺める', lead: '色と言葉を選んで置き、今の気分を眺める。',
-    steps: ['今日のテーマを選ぶ（決めなくてもOK）', '色の輪から、気になる言葉を選ぶ', '曼荼羅に置いて、眺める'], meta: '約3分・書かなくても大丈夫' },
-  { id: 'make', room: '曼荼羅のアトリエ', name: '自分でつくる', lead: 'パーツと色を選んで、曼荼羅アートをつくる。',
-    steps: ['パーツを選ぶ（おまかせでもOK）', '色・数・大きさを整える', '画像で保存する'], meta: '約3分・絵心はいりません' },
-] as const
 const SCENE_CARDS = [
   { word: '希望', bg: '#F2E024', ink: '#4a4200', x: '50%', y: '30%', size: '40%' },
   { word: '情熱', bg: '#EF4060', ink: '#ffffff', x: '28%', y: '66%', size: '46%' },
@@ -96,7 +93,7 @@ export default function App() {
 
   const hasProgress = cards.length > 0 || picked.length > 0 || hasNotes(notes)
 
-  function enter(room: 'look' | 'make') {
+  function enter(room: RoomId) {
     if (room === 'make') { setPresets([]); setScreen('make') } else if (hasProgress) { setConfirmFresh(true); window.scrollTo({ top: 0 }) } else startFresh()
   }
 
@@ -128,54 +125,25 @@ export default function App() {
   return (
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
-      {screen === 'home' ? <section className="intro" aria-labelledby="title">
-        {/* First view: returning visitors pick a room in one tap; newcomers scroll to look inside each room. */}
-        <div className="intro-top">
-          <img className="home-logo" src={logo} width="1000" height="1000" alt="" draggable={false} />
-          <h1 ref={heading} tabIndex={-1} id="title" className="visually-hidden">曼荼羅palette</h1>
-          <p className="intro-catch">どちらの部屋へ？</p>
-          {confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
-            <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
-            <p className="hint">はじめからにすると、途中の作品は消えます。</p>
-            <div className="home-actions">
-              <button type="button" className="button-primary" onClick={() => { setConfirmFresh(false); setScreen(resumeScreen && resumeScreen !== 'make' ? resumeScreen : cards.length ? 'field' : 'pick') }}>つづきから</button>
-              <button type="button" className="danger" onClick={startFresh}>消して、はじめから</button>
-            </div>
-            <button type="button" className="back-button" onClick={() => setConfirmFresh(false)}>やめる</button>
-          </div> : <>
-            <div className="room-picks">
-              {ROOMS.map(room => <button key={room.id} type="button" className="room-pick" onClick={() => enter(room.id)}>
-                <span className="room-kicker">{room.room}</span>
-                <span className="room-name">{room.name}</span>
-              </button>)}
-            </div>
-            {resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
-              前回のつづきから<span aria-hidden="true">→</span>
-            </button>}
-          </>}
-          <a className="peek" href="#room-look">それぞれの部屋をのぞいてみる<span aria-hidden="true">↓</span></a>
-        </div>
-
-        {ROOMS.map(room => <article key={room.id} id={`room-${room.id}`} className="room" aria-labelledby={`room-${room.id}-name`}>
-          <p className="room-kicker">{room.room}</p>
-          <h2 id={`room-${room.id}-name`} className="room-name">{room.name}</h2>
-          <p className="lead">{room.lead}</p>
-          <div className="room-window" aria-hidden="true">
-            {room.id === 'look'
-              ? <span className="scene scene--look" style={{ backgroundImage: `url(${artwork})` }}>
-                {SCENE_CARDS.map(card => <i key={card.word} style={{ left: card.x, top: card.y, width: card.size, background: card.bg, color: card.ink }}>{card.word}</i>)}
-              </span>
-              : <img className="scene" src={atelier} alt="" draggable={false} />}
+      {screen === 'home' ? <Home heading={heading} logo={logo} parts={partsBase} onEnter={enter}
+        scenes={{
+          look: <span className="scene scene--look" style={{ backgroundImage: `url(${artwork})` }}>
+            {SCENE_CARDS.map(card => <i key={card.word} style={{ left: card.x, top: card.y, width: card.size, background: card.bg, color: card.ink }}>{card.word}</i>)}
+          </span>,
+          make: <img className="scene" src={atelier} alt="" draggable={false} />,
+        }}
+        notice={confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
+          <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
+          <p className="hint">はじめからにすると、途中の作品は消えます。</p>
+          <div className="home-actions">
+            <button type="button" className="button-primary" onClick={() => { setConfirmFresh(false); setScreen(resumeScreen && resumeScreen !== 'make' ? resumeScreen : cards.length ? 'field' : 'pick') }}>つづきから</button>
+            <button type="button" className="danger" onClick={startFresh}>消して、はじめから</button>
           </div>
-          {/* The steps are the real order of the experience. */}
-          <ol className="room-steps">
-            {room.steps.map(step => <li key={step}>{step}</li>)}
-          </ol>
-          <p className="room-meta">{room.meta}</p>
-          <button type="button" className="button-primary room-enter" onClick={() => enter(room.id)}>{room.room}に入る<span aria-hidden="true">→</span></button>
-        </article>)}
-        <p className="hint home-note">無料・登録なし。入力した内容は、外部に送られません。</p>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
+          <button type="button" className="back-button" onClick={() => setConfirmFresh(false)}>やめる</button>
+        </div> : resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
+          前回のつづきから<span aria-hidden="true">→</span>
+        </button>} />
+      : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
         onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
         ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
