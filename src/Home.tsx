@@ -2,29 +2,48 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, Ref } from 'react'
 
 // The home screen as a museum floor guide: the guide up top lets returning visitors enter in one tap;
-// scrolling rides the elevator floor by floor, and each floor's doors open onto a scene from that room.
+// scrolling rides the elevator floor by floor. Each floor's doors swing open onto a wide view of the
+// experience, then the window steps through real screens of that room, one step at a time.
 
 export type RoomId = 'look' | 'make'
+interface Step { label: string; image: string }
 interface Floor {
   floor: string; room: string; name: string; lead: string
-  steps?: readonly string[]; meta?: string; enter?: RoomId
+  photo?: string; steps?: readonly Step[]; meta?: string; enter?: RoomId
 }
+// Photos are provisional; the step images are screenshots of the real screens (public/assets/tour).
 const FLOORS: readonly Floor[] = [
-  { floor: '1F', room: '色と言葉の部屋', name: '自分を眺める', enter: 'look', lead: '色と言葉を選んで置き、今の気分を眺める。',
-    steps: ['今日のテーマを選ぶ（決めなくてもOK）', '色の輪から、気になる言葉を選ぶ', '曼荼羅に置いて、眺める'], meta: '約3分・書かなくても大丈夫' },
-  { floor: '2F', room: '曼荼羅のアトリエ', name: '自分でつくる', enter: 'make', lead: 'パーツと色を選んで、曼荼羅アートをつくる。',
-    steps: ['パーツを選ぶ（おまかせでもOK）', '色・数・大きさを整える', '画像で保存する'], meta: '約3分・絵心はいりません' },
+  { floor: '1F', room: '色と言葉の部屋', name: '自分を眺める', enter: 'look', lead: '色と言葉で、今の気分をかたちに。', photo: 'look-photo.jpg',
+    steps: [{ label: '色を選ぶ', image: 'look-1.jpg' }, { label: '言葉を選ぶ', image: 'look-2.jpg' }, { label: '並べて眺める', image: 'look-3.jpg' }],
+    meta: '約3分・書かなくても大丈夫' },
+  { floor: '2F', room: '曼荼羅のアトリエ', name: '自分でつくる', enter: 'make', lead: 'パーツを組み合わせて、自分だけの曼荼羅に。', photo: 'make-photo.jpg',
+    steps: [{ label: 'パーツを選ぶ', image: 'make-1.jpg' }, { label: '色や形を整える', image: 'make-2.jpg' }, { label: '作品を保存', image: 'make-3.jpg' }],
+    meta: '約3分・おまかせでもOK・絵心はいりません' },
   { floor: '3F', room: 'ギャラリー', name: 'みんなの作品', lead: '公開された作品を、ゆっくり鑑賞できるフロア。' },
   { floor: '4F', room: 'わたしの展示室', name: '作品を収蔵する', lead: 'つくった作品を、日付ごとに飾っておけるフロア。' },
 ]
 
-export default function Home({ heading, logo, scenes, onEnter, notice }: {
-  heading: Ref<HTMLHeadingElement>; logo: string
-  scenes: Record<RoomId, ReactNode>; onEnter: (room: RoomId) => void; notice: ReactNode
+const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+export default function Home({ heading, logo, tour, onEnter, notice }: {
+  heading: Ref<HTMLHeadingElement>; logo: string; tour: string
+  onEnter: (room: RoomId) => void; notice: ReactNode
 }) {
   const floorRefs = useRef<(HTMLElement | null)[]>([])
   const [current, setCurrent] = useState(0)
   const [opened, setOpened] = useState<boolean[]>(() => FLOORS.map(() => false))
+  // Slide 0 is the wide photo; slides 1–3 are the steps.
+  const [slides, setSlides] = useState<number[]>(() => FLOORS.map(() => 0))
+  const [paused, setPaused] = useState<boolean[]>(() => FLOORS.map(() => false))
+  const showSlide = (floor: number, slide: number) => setSlides(previous => previous.map((value, i) => i === floor ? slide : value))
+
+  // Only the floor in view plays its slideshow, starting once its doors have opened.
+  useEffect(() => {
+    const steps = FLOORS[current]?.steps
+    if (!steps || !opened[current] || paused[current] || reducedMotion()) return
+    const timer = setInterval(() => setSlides(previous => previous.map((value, i) => i === current ? (value + 1) % (steps.length + 1) : value)), 2600)
+    return () => clearInterval(timer)
+  }, [current, opened, paused])
 
   // Light up the floor in view, and open its doors the first time it arrives.
   useEffect(() => {
@@ -53,12 +72,14 @@ export default function Home({ heading, logo, scenes, onEnter, notice }: {
 
     <nav className="floor-guide" aria-labelledby="floor-guide-title">
       <h2 id="floor-guide-title"><span>館内案内</span>FLOOR GUIDE</h2>
+      <p className="guide-hint">フロアを押すと、すぐに始まります</p>
       <div className="floor-guide-grid">
         {FLOORS.map((floor, index) => floor.enter
           ? <button key={floor.floor} type="button" className="guide-card" onClick={() => onEnter(floor.enter!)}>
             <span className="floor-badge">{floor.floor}</span>
             <span className="guide-room">{floor.room}</span>
             <span className="guide-name">{floor.name}</span>
+            <span className="guide-go">すぐ入る<span aria-hidden="true">→</span></span>
           </button>
           : <button key={floor.floor} type="button" className="guide-card is-soon" onClick={() => goTo(index)}>
             <span className="floor-badge">{floor.floor}</span>
@@ -67,7 +88,7 @@ export default function Home({ heading, logo, scenes, onEnter, notice }: {
           </button>)}
       </div>
       {notice}
-      <button type="button" className="back-button tour" onClick={() => goTo(0)}>フロアをめぐって、中を見てみる<span aria-hidden="true">↓</span></button>
+      <button type="button" className="back-button tour" onClick={() => goTo(0)}>はじめての方は、フロアをめぐって中をのぞく<span aria-hidden="true">↓</span></button>
     </nav>
 
     <div className="floors">
@@ -86,13 +107,23 @@ export default function Home({ heading, logo, scenes, onEnter, notice }: {
           <span><span className="guide-room">{floor.room}</span><h2 id={`floor-${index}-name`} className="floor-name">{floor.name}</h2></span>
         </div>
         <div className="floor-window" aria-hidden="true">
-          {floor.enter && scenes[floor.enter]}
+          {floor.photo && <img className={`slide slide--photo${slides[index] === 0 ? ' is-shown' : ''}`} src={tour + floor.photo} alt="" draggable={false} />}
+          {floor.steps?.map((step, i) => <span key={step.label} className={`slide slide--step${slides[index] === i + 1 ? ' is-shown' : ''}`}>
+            <span className="slide-label"><b>{i + 1}</b>{step.label}</span>
+            <img src={tour + step.image} alt="" draggable={false} />
+          </span>)}
           <span className="floor-door floor-door--left" />
           <span className="floor-door floor-door--right" />
           {!floor.enter && <span className="soon-plate">準備中</span>}
         </div>
-        <p className="lead">{floor.lead}</p>
-        {floor.steps && <ol className="room-steps">{floor.steps.map(step => <li key={step}>{step}</li>)}</ol>}
+        <p className="lead floor-lead">{floor.lead}</p>
+        {floor.steps && <ol className="step-tabs" aria-label="体験の流れ">
+          {floor.steps.map((step, i) => <li key={step.label}>
+            <button type="button" aria-pressed={slides[index] === i + 1} onClick={() => { showSlide(index, i + 1); setPaused(previous => previous.map((value, f) => f === index || value)) }}>
+              <b>{i + 1}</b>{step.label}
+            </button>
+          </li>)}
+        </ol>}
         {floor.meta && <p className="room-meta">{floor.meta}</p>}
         {floor.enter
           ? <button type="button" className="button-primary room-enter" onClick={() => onEnter(floor.enter!)}>{floor.room}に入る<span aria-hidden="true">→</span></button>

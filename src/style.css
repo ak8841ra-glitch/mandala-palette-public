@@ -99,31 +99,14 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .floor { padding: 32px 0 36px; border-bottom: 1px solid var(--line); scroll-margin-top: 64px; }
 .floor-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 16px; text-align: left; }
 .floor-name { margin: 0; font-size: clamp(22px, 6vw, 26px); }
-.floor-window { position: relative; width: min(100%, 300px); aspect-ratio: 5 / 6; margin: 0 auto 20px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 999px 999px 18px 18px; background: var(--surface); box-shadow: var(--shadow); }
-/* Doors: two ivory panels that slide apart when the floor arrives. */
-.floor-door { position: absolute; top: 0; bottom: 0; width: 50%; background: linear-gradient(180deg, var(--surface), #F1E9DB); transition: transform 1.2s cubic-bezier(.6, 0, .2, 1) .25s; }
-.floor-door--left { left: 0; border-right: 1px solid var(--line-strong); }
-.floor-door--right { right: 0; border-left: 1px solid var(--line-strong); }
-.floor-door::after { content: ""; position: absolute; top: 58%; width: 3px; height: 26px; border-radius: 2px; background: var(--line-strong); }
-.floor-door--left::after { right: 10px; }
-.floor-door--right::after { left: 10px; }
-.floor.is-open .floor-door--left { transform: translateX(-101%); }
-.floor.is-open .floor-door--right { transform: translateX(101%); }
-.floor.is-soon .floor-door { transform: none; }
 /* Closed floors keep their doors shut, with a small plate hung on the front. */
-.soon-plate { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); padding: 6px 16px; border: 1px solid var(--ink); border-radius: 6px; background: var(--surface); font-size: 12px; letter-spacing: .24em; color: var(--ink); box-shadow: 0 3px 8px rgb(58 54 57 / .12); }
+.soon-plate { position: absolute; z-index: 4; top: 34%; left: 50%; transform: translateX(-50%); padding: 6px 16px; border: 1px solid var(--ink); border-radius: 6px; background: var(--surface); font-size: 12px; letter-spacing: .24em; color: var(--ink); box-shadow: 0 3px 8px rgb(58 54 57 / .12); }
 .floor .lead { text-wrap: balance; }
 @media (prefers-reduced-motion: reduce) {
   .floor-door { transition: none; }
 }
-.room-steps { display: grid; gap: 10px; margin: 0 auto 16px; padding: 0; list-style: none; counter-reset: step; text-align: left; max-width: 340px; }
-.room-steps li { display: flex; align-items: center; gap: 12px; font-size: 15px; line-height: 1.6; counter-increment: step; }
-.room-steps li::before { content: counter(step); flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--ink); border-radius: 50%; font-family: var(--font-display); font-size: 14px; }
 .room-meta { margin: 0 0 16px; font-size: 12px; color: var(--ink-soft); }
 .room-enter { width: 100%; max-width: 340px; min-height: 54px; font-size: 15px; }
-.scene { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
-.scene--look { background-color: var(--surface); background-size: 115%; background-position: center; }
-.scene--look i { position: absolute; display: block; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 3px 8px rgb(58 54 57 / .16); }
 .resume { margin-top: 4px; }
 .home-note { margin-top: 16px; }
 .home-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
@@ -270,3 +253,29 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .layer-name small { font-size: 11px; opacity: .75; }
 
 
+
+/* The floor window: large arched opening; two doors swing wide, then slides show the room. */
+.floor-window { position: relative; width: 100%; aspect-ratio: 1; margin: 0 auto 18px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 999px 999px 20px 20px; background: var(--surface); box-shadow: var(--shadow); perspective: 1100px; }
+.floor-door { position: absolute; top: 0; bottom: 0; z-index: 3; width: 50%; background: linear-gradient(180deg, var(--surface), #F1E9DB); transition: transform 1.4s cubic-bezier(.55, 0, .15, 1) .2s, opacity 1.4s .2s; }
+.floor-door--left { left: 0; border-right: 1px solid var(--line-strong); transform-origin: left center; }
+.floor-door--right { right: 0; border-left: 1px solid var(--line-strong); transform-origin: right center; }
+.floor-door::after { content: ""; position: absolute; top: 56%; width: 3px; height: 30px; border-radius: 2px; background: var(--line-strong); }
+.floor-door--left::after { right: 12px; }
+.floor-door--right::after { left: 12px; }
+.floor.is-open .floor-door--left { transform: rotateY(-100deg); opacity: 0; }
+.floor.is-open .floor-door--right { transform: rotateY(100deg); opacity: 0; }
+.floor.is-soon .floor-door { transform: none; opacity: 1; }
+.slide { position: absolute; inset: 0; opacity: 0; transition: opacity .7s; }
+.slide.is-shown { opacity: 1; }
+.slide--photo { width: 100%; height: 100%; object-fit: cover; transform: scale(1.08); transition: opacity .7s, transform 6s ease-out; }
+.floor.is-open .slide--photo { transform: scale(1); }
+.slide--step { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16% 10% 8%; background: var(--bg); }
+.slide--step img { display: block; max-width: 100%; max-height: 72%; object-fit: contain; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: 0 8px 20px rgb(58 54 57 / .12); }
+.slide-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 17px; letter-spacing: .12em; }
+.slide-label b, .step-tabs b { display: inline-grid; place-items: center; width: 24px; height: 24px; border: 1px solid currentColor; border-radius: 50%; font-weight: 400; font-size: 12px; }
+.floor-lead { font-family: var(--font-display); letter-spacing: .08em; }
+.step-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 14px; padding: 0; list-style: none; }
+.step-tabs button { flex-direction: column; gap: 3px; width: 100%; min-height: 58px; padding: 6px 4px; border-radius: 14px; font-size: 12px; white-space: nowrap; }
+.guide-hint { margin: -6px 0 12px; font-size: 12px; color: var(--ink); }
+.guide-go { display: inline-flex; gap: 4px; margin-top: 6px; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: var(--on-ink); font-size: 11px; letter-spacing: .08em; }
+@media (prefers-reduced-motion: reduce) { .floor-door, .slide, .slide--photo { transition: none; } }

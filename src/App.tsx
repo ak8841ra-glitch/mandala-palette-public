@@ -14,13 +14,6 @@ import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
-// Window scenes, kept simple: a two-tone mandala for the atelier, three color cards on the field for the other room.
-const atelier = `${import.meta.env.BASE_URL}assets/door-atelier-simple.jpg`
-const SCENE_CARDS = [
-  { bg: '#43A55E', x: '50%', y: '28%', size: '44%' },
-  { bg: '#8462A0', x: '27%', y: '68%', size: '36%' },
-  { bg: '#F1BFCB', x: '73%', y: '68%', size: '36%' },
-]
 
 type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
 const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
@@ -124,13 +117,7 @@ export default function App() {
   return (
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
-      {screen === 'home' ? <Home heading={heading} logo={logo} onEnter={enter}
-        scenes={{
-          look: <span className="scene scene--look" style={{ backgroundImage: `url(${artwork})` }}>
-            {SCENE_CARDS.map(card => <i key={card.bg} style={{ left: card.x, top: card.y, width: card.size, background: card.bg }} />)}
-          </span>,
-          make: <img className="scene" src={atelier} alt="" draggable={false} />,
-        }}
+      {screen === 'home' ? <Home heading={heading} logo={logo} tour={`${import.meta.env.BASE_URL}assets/tour/`} onEnter={enter}
         notice={confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
           <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
           <p className="hint">はじめからにすると、途中の作品は消えます。</p>
