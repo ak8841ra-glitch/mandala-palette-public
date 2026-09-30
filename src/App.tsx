@@ -1,28 +1,71 @@
 import { useEffect, useRef, useState } from 'react'
-import { COLORS, keywordsFor } from './palette'
-import type { Keyword, PaletteColor } from './palette'
-import SelectedCard from './SelectedCard'
+import { KEYWORDS } from './palette'
+import WordPicker from './WordPicker'
+import Home from './Home'
+import type { RoomId } from './Home'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
+import MandalaMaker, { emptyMaker } from './MandalaMaker'
+import type { Maker } from './MandalaMaker'
+import type { Preset } from './omakase'
 import type { PlacedCard } from './MandalaField'
+import { GUIDES, THEMES, emptyNotes } from './guide'
+import type { Guide, Notes, Theme } from './guide'
 
-const fields = ['triangle', 'horizontal', 'free'] as const
-type Field = typeof fields[number]
-const descriptions = ['小花が三角形に広がる模様', '小花が横一列に続く模様', '小花が円状に広がる模様']
+const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
+const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
+
+type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
+const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
+
+// The draft lives only in this browser, so an interrupted session can resume after a reload.
+const DRAFT_KEY = 'mandala-palette:draft'
+interface Draft {
+  screen: Screen; themeId: string | null; guide: Guide; cards: PlacedCard[]; picked: string[]
+  open: string[]; notes: Notes; showWords: boolean; maker: Maker
+}
+function loadDraft(): Partial<Draft> {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as Partial<Draft> } catch { return {} }
+}
+
+// Each card's color counts by its size, so larger cards lead the おまかせ design.
+const SIZE_WEIGHT = { small: 1, medium: 2, large: 3 } as const
+function presetsFrom(cards: PlacedCard[]): Preset[] {
+  const weights = new Map<string, number>()
+  for (const card of cards) weights.set(card.bg, (weights.get(card.bg) ?? 0) + SIZE_WEIGHT[card.size ?? 'medium'])
+  return [...weights].map(([color, weight]) => ({ color, weight })).sort((a, b) => b.weight - a.weight)
+}
+
+const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
+
+// New cards start on a ring around the center, so each one can be seen and grabbed.
+function ring(count: number, index: number) {
+  if (count === 1) return { x: .5, y: .5 }
+  const angle = -Math.PI / 2 + index * 2 * Math.PI / count
+  const radius = count > 4 ? .28 : .22
+  return { x: .5 + Math.cos(angle) * radius, y: .5 + Math.sin(angle) * radius }
+}
 
 export default function App() {
-  const [screen, setScreen] = useState<'home' | 'colors' | 'keywords' | 'fields' | 'field' | 'reflection'>('home')
-  const resumeScreen = useRef<typeof screen | null>(null)
+  const [draft] = useState(loadDraft)
+  const [screen, setScreen] = useState<Screen>('home')
+  // Drafts from older versions may name screens that no longer exist.
+  const [resumeScreen, setResumeScreen] = useState<Screen | null>(draft.screen && draft.screen !== 'home'
+    ? SCREENS.includes(draft.screen) ? draft.screen : draft.cards?.length ? 'field' : 'pick' : null)
   function goHome() {
-    if (screen !== 'home') resumeScreen.current = screen
+    if (screen !== 'home') setResumeScreen(screen)
     setScreen('home')
   }
-  const [story, setStory] = useState('')
-  const [showWords, setShowWords] = useState(true)
-  const [selectedField, setSelectedField] = useState<Field | null>(null)
-  const [cards, setCards] = useState<PlacedCard[]>([])
-  const [color, setColor] = useState<PaletteColor | null>(null)
-  const [keyword, setKeyword] = useState<Keyword | null>(null)
+  const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
+  const [guide, setGuide] = useState<Guide>(GUIDES.includes(draft.guide as Guide) ? draft.guide! : 'triangle')
+  const [notes, setNotes] = useState<Notes>(draft.notes ?? emptyNotes())
+  const [showWords, setShowWords] = useState(draft.showWords ?? true)
+  const [cards, setCards] = useState<PlacedCard[]>(draft.cards ?? [])
+  const [picked, setPicked] = useState<string[]>((draft.picked ?? []).filter(id => KEYWORDS.has(id)))
+  const [open, setOpen] = useState<string[]>(draft.open ?? [])
+  const [maker, setMaker] = useState<Maker>(draft.maker?.layers ? draft.maker : emptyMaker())
+  const [presets, setPresets] = useState<Preset[]>([])
+  const [confirmFresh, setConfirmFresh] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const initialRender = useRef(true)
 
@@ -34,119 +77,79 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [screen])
 
+  useEffect(() => {
+    const saved: Draft = { screen: screen === 'home' ? resumeScreen ?? 'home' : screen, themeId: theme?.id ?? null,
+      guide, cards, picked, open, notes, showWords, maker }
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
+  }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker])
+
+  const hasProgress = cards.length > 0 || picked.length > 0 || hasNotes(notes)
+
+  function enter(room: RoomId) {
+    if (room === 'make') { setPresets([]); setScreen('make') } else if (hasProgress) { setConfirmFresh(true); window.scrollTo({ top: 0 }) } else startFresh()
+  }
+
   function startFresh() {
-    if ((cards.length > 0 || color || keyword || story) && !window.confirm('今の作品と入力した文章を消して、はじめから作りますか？残したい作品は、先に「つづきから」で戻って画像保存してください。')) return
     setCards([])
-    setColor(null)
-    setKeyword(null)
-    setSelectedField(null)
-    setStory('')
+    setPicked([])
+    setOpen([])
+    setNotes(emptyNotes())
+    setTheme(null)
+    setGuide('triangle')
     setShowWords(true)
-    resumeScreen.current = null
-    setScreen('colors')
+    setConfirmFresh(false)
+    setResumeScreen(null)
+    setScreen('theme')
   }
 
-  function selectColor(nextColor: PaletteColor) {
-    if (color?.key !== nextColor.key) setKeyword(null)
-    setColor(nextColor)
-    setScreen('keywords')
-  }
-
-  function placeCard() {
-    if (!keyword || !color) return
-    const instanceId = crypto.randomUUID()
-    setCards(previous => [...previous, {
-      ...keyword, instanceId, colorId: color.key, colorName: color.name,
-      x: .42 + (previous.length % 4) * .05, y: .42 + (previous.length % 4) * .05,
-      z: Math.max(0, ...previous.map(card => card.z)) + 1,
-    }])
-    setScreen(selectedField ? 'field' : 'fields')
+  function placePicked() {
+    setCards(previous => {
+      const top = Math.max(0, ...previous.map(card => card.z))
+      return [...previous, ...picked.map((id, index) => ({
+        ...KEYWORDS.get(id)!, instanceId: crypto.randomUUID(), ...ring(picked.length, index),
+        size: picked.length > 4 ? 'small' as const : 'medium' as const, z: top + index + 1,
+      }))]
+    })
+    setPicked([])
+    setOpen([])
   }
 
   return (
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
-      {screen === 'home' ? <section className="intro" aria-labelledby="title">
-        <div className="mandala" aria-hidden="true">
-          <svg viewBox="0 0 400 400" fill="none">
-            <circle cx="200" cy="200" r="180" />
-            <circle cx="200" cy="200" r="166" />
-            <circle cx="200" cy="200" r="112" />
-            {Array.from({ length: 12 }, (_, i) => (
-              <ellipse key={i} cx="200" cy="143" rx="40" ry="103" transform={`rotate(${i * 30} 200 200)`} />
-            ))}
-            <circle cx="200" cy="200" r="36" />
-          </svg>
-        </div>
-        <p className="eyebrow">A MOMENT FOR YOURSELF</p>
-        <h1 ref={heading} tabIndex={-1} id="title">色と言葉で、<br />今の自分に出会う。</h1>
-        <p className="description">今、気になる色と言葉を選び、自由に置いてみる。<br className="desktop-break" />正解はありません。あなただけのストーリーを、ここから。</p>
-        <div className="home-actions">
-          <button type="button" onClick={startFresh}>はじめから<span aria-hidden="true">↗</span></button>
-          {resumeScreen.current && <button type="button" onClick={() => setScreen(resumeScreen.current ?? 'colors')}>
-            つづきから<span aria-hidden="true">→</span>
-          </button>}
-        </div>
-        <p className="status">色と言葉を、その時の感覚で。</p>
-      </section> : screen === 'fields' ? <section className="selection field-selection" aria-labelledby="field-choice-title">
+      {screen === 'home' ? <Home heading={heading} logo={logo} tour={`${import.meta.env.BASE_URL}assets/tour/`} onEnter={enter}
+        notice={confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
+          <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
+          <p className="hint">はじめからにすると、途中の作品は消えます。</p>
+          <div className="home-actions">
+            <button type="button" className="button-primary" onClick={() => { setConfirmFresh(false); setScreen(resumeScreen && resumeScreen !== 'make' ? resumeScreen : cards.length ? 'field' : 'pick') }}>つづきから</button>
+            <button type="button" className="danger" onClick={startFresh}>消して、はじめから</button>
+          </div>
+          <button type="button" className="back-button" onClick={() => setConfirmFresh(false)}>やめる</button>
+        </div> : resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
+          前回のつづきから<span aria-hidden="true">→</span>
+        </button>} />
+      : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
+        onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
+        ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
-          <button className="back-button" type="button" onClick={() => {
-            if (selectedField) setScreen('field')
-            else { setCards(previous => previous.slice(0, -1)); setScreen('keywords') }
-          }}>← {selectedField ? '配置に戻る' : 'カードに戻る'}</button>
-          <span className="step-label">03 / フィールドを選ぶ</span>
+          <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
+            ← {cards.length ? '配置に戻る' : 'トップへ戻る'}
+          </button>
+          <span className="step-label">01 / テーマを選ぶ</span>
         </nav>
-        <h1 ref={heading} tabIndex={-1} id="field-choice-title">どの模様に、置いてみる？</h1>
-        <p className="description">気になる画像を選んでください。<br />どの模様でも、好きな場所に自由に置けます。</p>
-        <div className="field-options">
-          {fields.map((field, index) => <button key={field} type="button" className="field-option"
-            aria-label={`${descriptions[index]}を選ぶ`} aria-pressed={selectedField === field}
-            onClick={() => { setSelectedField(field); setScreen('field') }}>
-            <img src={`${import.meta.env.BASE_URL}assets/field-${field}.svg`} alt={descriptions[index]} draggable={false} />
+        <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
+        <p className="lead">決めずに始めても大丈夫。</p>
+        <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
+          {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
+            aria-pressed={theme?.id === item.id}
+            onClick={() => { setTheme(item); setScreen(cards.length ? 'field' : 'pick') }}>
+            {item.label}
           </button>)}
         </div>
-      </section> : screen === 'reflection' ? <Reflection cards={cards} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} story={story} onStory={setStory} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome} /> : screen === 'field' ? <MandalaField onComplete={() => setScreen('reflection')} artwork={`${import.meta.env.BASE_URL}assets/field-${selectedField ?? 'triangle'}.svg`} onChangeField={() => setScreen('fields')} cards={cards} setCards={setCards} onAdd={() => {
-        setColor(null); setKeyword(null); setScreen('colors')
-      }} /> : <section className="selection" aria-labelledby="selection-title">
-        <nav className="selection-nav" aria-label="画面の移動">
-          <button className="back-button" type="button" onClick={() => setScreen(screen === 'colors' ? (cards.length ? 'field' : 'home') : 'colors')}>
-            ← {screen === 'colors' ? (cards.length ? '配置に戻る' : 'トップへ戻る') : '色を選び直す'}
-          </button>
-          <span className="step-label">{screen === 'colors' ? '01 / 色を選ぶ' : '02 / 言葉を選ぶ'}</span>
-        </nav>
-        <p className="eyebrow">{screen === 'colors' ? 'CHOOSE YOUR COLOR' : 'FIND YOUR WORD'}</p>
-        <h1 ref={heading} tabIndex={-1} id="selection-title">
-          {screen === 'colors' ? '今、気になる色は？' : '今、心にとまる言葉は？'}
-        </h1>
-        <p className="description">{screen === 'colors' ? '直感で、ひとつ選んでみてください。' : '12の言葉から、気になるひとつを選んでください。'}</p>
-        {screen === 'colors' ? (
-          <div className="color-wheel" role="group" aria-label="色を1つ選ぶ">
-            <img src={`${import.meta.env.BASE_URL}assets/color-wheel.png`} width="2000" height="2000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
-            {COLORS.map(item => (
-              <button className={`wheel-hit wheel-hit--${item.key}`} key={item.key} type="button"
-                aria-label={item.name} title={item.name}
-                onClick={() => selectColor(item)} />
-            ))}
-          </div>
-        ) : color && (
-          <>
-            <p className="chosen-color">選んだ色：{color.name}</p>
-            <div className="keyword-grid" role="group" aria-label={`${color.name}のキーワードを1つ選ぶ`}>
-              {keywordsFor(color).map(item => (
-                <button key={item.id} className="keyword-choice" type="button" aria-pressed={keyword?.id === item.id}
-                  style={{ background: item.bg, color: item.ink }} onClick={() => setKeyword(item)}>
-                  {item.word}<span className="selection-check" aria-hidden="true">{keyword?.id === item.id ? '✓' : ''}</span>
-                </button>
-              ))}
-            </div>
-            <div className="selection-summary">
-              {keyword ? <SelectedCard key={keyword.id} keyword={keyword}
-                originalWord={keywordsFor(color).find(item => item.id === keyword.id)!.word}
-                onChange={setKeyword} onPlace={placeCard} /> : <p>言葉を選ぶと、ここにカードが表示されます。</p>}
-            </div>
-          </>
-        )}
-      </section>}
+      </section> : <WordPicker heading={heading} theme={theme} picked={picked} onPicked={setPicked} open={open} onOpen={setOpen}
+        backLabel={cards.length ? '配置に戻る' : 'テーマを選び直す'} onBack={() => setScreen(cards.length ? 'field' : 'theme')}
+        wheel={logo} doneLabel={cards.length ? '追加する' : '並べる'} onDone={() => { placePicked(); setScreen('field') }} />}
       <footer><span>曼荼羅palette</span><span>色を選ぶ。言葉を置く。自分を眺める。</span></footer>
     </main>
   )
