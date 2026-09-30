@@ -3,20 +3,20 @@ import type { ReactNode, Ref } from 'react'
 
 // The home screen as a museum floor guide: the guide up top lets returning visitors enter in one tap;
 // scrolling rides the elevator floor by floor. Each floor's doors swing open onto a wide view of the
-// experience, then the window steps through real screens of that room, one step at a time.
+// experience: the room's first screen, then its steps, one at a time.
 
 export type RoomId = 'look' | 'make'
 interface Step { label: string; image: string }
 interface Floor {
   floor: string; room: string; name: string; lead: string
-  photo?: string; steps?: readonly Step[]; meta?: string; enter?: RoomId
+  cover?: string; steps?: readonly Step[]; meta?: string; enter?: RoomId
 }
-// Photos are provisional; the step images are screenshots of the real screens (public/assets/tour).
+// Covers and step images are screenshots of the real screens (public/assets/tour).
 const FLOORS: readonly Floor[] = [
-  { floor: '1F', room: '色と言葉の部屋', name: '自分を眺める', enter: 'look', lead: '色と言葉で、今の気分をかたちに。', photo: 'look-photo.jpg',
+  { floor: '1F', room: '色と言葉の部屋', name: '自分を眺める', enter: 'look', lead: '色と言葉で、今の気分をかたちに。', cover: 'look-cover.jpg',
     steps: [{ label: '色を選ぶ', image: 'look-1.jpg' }, { label: '言葉を選ぶ', image: 'look-2.jpg' }, { label: '並べて眺める', image: 'look-3.jpg' }],
     meta: '約3分・書かなくても大丈夫' },
-  { floor: '2F', room: '曼荼羅のアトリエ', name: '自分でつくる', enter: 'make', lead: 'パーツを組み合わせて、自分だけの曼荼羅に。', photo: 'make-photo.jpg',
+  { floor: '2F', room: '曼荼羅のアトリエ', name: '自分でつくる', enter: 'make', lead: 'パーツを組み合わせて、自分だけの曼荼羅に。', cover: 'make-cover.jpg',
     steps: [{ label: 'パーツを選ぶ', image: 'make-1.jpg' }, { label: '色や形を整える', image: 'make-2.jpg' }, { label: '作品を保存', image: 'make-3.jpg' }],
     meta: '約3分・おまかせでもOK・絵心はいりません' },
   { floor: '3F', room: 'ギャラリー', name: 'みんなの作品', lead: '公開された作品を、ゆっくり鑑賞できるフロア。' },
@@ -32,7 +32,7 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
   const floorRefs = useRef<(HTMLElement | null)[]>([])
   const [current, setCurrent] = useState(0)
   const [opened, setOpened] = useState<boolean[]>(() => FLOORS.map(() => false))
-  // Slide 0 is the wide photo; slides 1–3 are the steps.
+  // Slide 0 is the room's first screen; slides 1–3 are the steps.
   const [slides, setSlides] = useState<number[]>(() => FLOORS.map(() => 0))
   const [paused, setPaused] = useState<boolean[]>(() => FLOORS.map(() => false))
   const showSlide = (floor: number, slide: number) => setSlides(previous => previous.map((value, i) => i === floor ? slide : value))
@@ -107,7 +107,7 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
           <span><span className="guide-room">{floor.room}</span><h2 id={`floor-${index}-name`} className="floor-name">{floor.name}</h2></span>
         </div>
         <div className="floor-window" aria-hidden="true">
-          {floor.photo && <img className={`slide slide--photo${slides[index] === 0 ? ' is-shown' : ''}`} src={tour + floor.photo} alt="" draggable={false} />}
+          {floor.cover && <img className={`slide slide--cover${slides[index] === 0 ? ' is-shown' : ''}`} src={tour + floor.cover} alt="" draggable={false} />}
           {floor.steps?.map((step, i) => <span key={step.label} className={`slide slide--step${slides[index] === i + 1 ? ' is-shown' : ''}`}>
             <span className="slide-label"><b>{i + 1}</b>{step.label}</span>
             <img src={tour + step.image} alt="" draggable={false} />
