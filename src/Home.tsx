@@ -18,17 +18,8 @@ const FLOORS: readonly Floor[] = [
   { floor: '4F', room: 'わたしの展示室', name: '作品を収蔵する', lead: 'つくった作品を、日付ごとに飾っておけるフロア。' },
 ]
 
-// Enamel dots and parts that drift around the logo; positions are % of the hero.
-const DRIFT = [
-  { x: 6, y: 18, size: 26, color: '#EF4060' }, { x: 88, y: 12, size: 20, color: '#43A55E' },
-  { x: 92, y: 62, size: 30, color: '#3E6CA8' }, { x: 4, y: 70, size: 22, color: '#F2E024' },
-  { x: 20, y: 94, size: 16, color: '#8C4FAE' }, { x: 78, y: 92, size: 18, color: '#F2941C' },
-  { x: 14, y: 44, size: 12, color: '#EC6E88' }, { x: 84, y: 38, size: 12, color: '#C7C7C7' },
-]
-const DRIFT_PARTS = [{ x: 76, y: 2, part: 'spark' }, { x: 12, y: 2, part: 'petal' }, { x: 94, y: 86, part: 'lotus' }]
-
-export default function Home({ heading, logo, parts, scenes, onEnter, notice }: {
-  heading: Ref<HTMLHeadingElement>; logo: string; parts: string
+export default function Home({ heading, logo, scenes, onEnter, notice }: {
+  heading: Ref<HTMLHeadingElement>; logo: string
   scenes: Record<RoomId, ReactNode>; onEnter: (room: RoomId) => void; notice: ReactNode
 }) {
   const floorRefs = useRef<(HTMLElement | null)[]>([])
@@ -54,16 +45,14 @@ export default function Home({ heading, logo, parts, scenes, onEnter, notice }: 
 
   return <section className="museum" aria-labelledby="title">
     <div className="hero">
-      <div className="drift" aria-hidden="true">
-        {DRIFT.map((dot, i) => <i key={i} className="drift-dot" style={{ left: `${dot.x}%`, top: `${dot.y}%`, width: dot.size, background: dot.color, animationDelay: `${-i * 1.7}s` }} />)}
-        {DRIFT_PARTS.map((item, i) => <i key={item.part} className="drift-part" style={{ left: `${item.x}%`, top: `${item.y}%`, maskImage: `url(${parts}${item.part}.png)`, WebkitMaskImage: `url(${parts}${item.part}.png)`, animationDelay: `${-i * 2.3}s` }} />)}
-      </div>
       <img className="home-logo" src={logo} width="1000" height="1000" alt="" draggable={false} />
-      <h1 ref={heading} tabIndex={-1} id="title" className="visually-hidden">曼荼羅palette</h1>
+      <p className="museum-kicker">MANDALA PALETTE MUSEUM</p>
+      <h1 ref={heading} tabIndex={-1} id="title" className="museum-title">曼荼羅palette<span>美術館</span></h1>
+      <p className="museum-lead">色と言葉、曼荼羅の作品に出会うミュージアム。<br />気になるフロアへ、どうぞ。</p>
     </div>
 
     <nav className="floor-guide" aria-labelledby="floor-guide-title">
-      <h2 id="floor-guide-title"><span>FLOOR GUIDE</span>フロアガイド</h2>
+      <h2 id="floor-guide-title"><span>館内案内</span>FLOOR GUIDE</h2>
       <div className="floor-guide-grid">
         {FLOORS.map((floor, index) => floor.enter
           ? <button key={floor.floor} type="button" className="guide-card" onClick={() => onEnter(floor.enter!)}>

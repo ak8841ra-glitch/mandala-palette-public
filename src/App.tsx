@@ -14,13 +14,12 @@ import type { Guide, Notes, Theme } from './guide'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
-const partsBase = `${import.meta.env.BASE_URL}assets/parts/`
-// Door scenes: the atelier shows a finished おまかせ mandala; the other room shows word cards on the field.
-const atelier = `${import.meta.env.BASE_URL}assets/door-atelier-light.jpg`
+// Window scenes, kept simple: a two-tone mandala for the atelier, three color cards on the field for the other room.
+const atelier = `${import.meta.env.BASE_URL}assets/door-atelier-simple.jpg`
 const SCENE_CARDS = [
-  { word: '希望', bg: '#F2E024', ink: '#4a4200', x: '50%', y: '30%', size: '40%' },
-  { word: '情熱', bg: '#EF4060', ink: '#ffffff', x: '28%', y: '66%', size: '46%' },
-  { word: '深呼吸', bg: '#B7CCE3', ink: '#1c344c', x: '74%', y: '70%', size: '36%' },
+  { bg: '#43A55E', x: '50%', y: '28%', size: '44%' },
+  { bg: '#8462A0', x: '27%', y: '68%', size: '36%' },
+  { bg: '#F1BFCB', x: '73%', y: '68%', size: '36%' },
 ]
 
 type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
@@ -125,10 +124,10 @@ export default function App() {
   return (
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
-      {screen === 'home' ? <Home heading={heading} logo={logo} parts={partsBase} onEnter={enter}
+      {screen === 'home' ? <Home heading={heading} logo={logo} onEnter={enter}
         scenes={{
           look: <span className="scene scene--look" style={{ backgroundImage: `url(${artwork})` }}>
-            {SCENE_CARDS.map(card => <i key={card.word} style={{ left: card.x, top: card.y, width: card.size, background: card.bg, color: card.ink }}>{card.word}</i>)}
+            {SCENE_CARDS.map(card => <i key={card.bg} style={{ left: card.x, top: card.y, width: card.size, background: card.bg }} />)}
           </span>,
           make: <img className="scene" src={atelier} alt="" draggable={false} />,
         }}
