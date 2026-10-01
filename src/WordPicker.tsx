@@ -53,7 +53,7 @@ export default function WordPicker({ heading, wheel, theme, picked, onPicked, op
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
     <h1 ref={heading} tabIndex={-1} id="picker-title">気になる色と言葉は？</h1>
     <p className="lead">{theme?.prompt ? `${theme.prompt}、` : ''}色の輪をタップ。</p>
-    <p className="hint">いくつ開いても、何枚選んでも大丈夫です。</p>
+    <p className="hint">はじめてなら、<strong>言葉3枚くらい</strong>がおすすめ。いくつ開いても、何枚選んでも大丈夫です。</p>
 
     <div ref={wheelRef} className="color-wheel" role="group" aria-label="色を開く・閉じる">
       <img src={wheel} width="1000" height="1000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />

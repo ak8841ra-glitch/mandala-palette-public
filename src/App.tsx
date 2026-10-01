@@ -140,6 +140,7 @@ export default function App() {
         </nav>
         <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
         <p className="lead">決めずに始めても大丈夫。</p>
+        <p className="flow-line">テーマ → 色と言葉を選ぶ → 置いて眺める → <strong>今の気分に、自分で気づく</strong></p>
         <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
           {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
             aria-pressed={theme?.id === item.id}

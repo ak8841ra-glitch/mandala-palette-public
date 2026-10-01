@@ -167,7 +167,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     <div className="story-editor">
       <h2>眺めて、問いかけてみる</h2>
       <p className="lead">気になる問いだけ、選んでみる。</p>
-      <p className="hint">ひと言でも、答えずに眺めるだけでも大丈夫です。</p>
+      <p className="reassure">書かなくても大丈夫。ひと言でも、眺めるだけでも。</p>
       <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
         {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
           onClick={() => toggleQuestion(question.id)}>

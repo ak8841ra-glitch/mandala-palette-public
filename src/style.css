@@ -73,19 +73,12 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .museum-title { display: flex; flex-direction: column; align-items: center; margin: 0; font-size: clamp(26px, 7vw, 32px); letter-spacing: .14em; line-height: 1.4; }
 .museum-title span { font-size: .72em; letter-spacing: .5em; margin-right: -.5em; }
 .museum-lead { margin: 10px 0 0; font-size: 13px; line-height: 1.9; color: var(--ink-soft); }
-.home-logo { position: relative; z-index: 1; display: block; width: min(40vw, 170px); height: auto; margin: 0 auto; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
+.home-logo { position: relative; z-index: 1; display: block; width: min(34vw, 140px); height: auto; margin: 0 auto; border-radius: 50%; clip-path: circle(48.5% at 50% 49%); background: var(--surface); box-shadow: var(--shadow); }
 
 .floor-guide { margin-top: 18px; padding: 16px 14px 10px; border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface); }
 .floor-guide h2 { display: flex; flex-direction: column; align-items: center; margin: 0 0 12px; font-family: var(--font-ui); font-size: 11px; font-weight: 400; letter-spacing: .2em; color: var(--ink-soft); }
 .floor-guide h2 span { font-family: var(--font-display); font-size: 20px; letter-spacing: .18em; color: var(--ink); }
-.floor-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 10px; margin-top: 18px; }
-.guide-card { position: relative; flex-direction: column; gap: 0; min-height: 88px; padding: 18px 6px 10px; border-color: var(--ink); border-radius: 16px; background: var(--bg); }
-.guide-card:hover { background: #F0E8DA; }
-.guide-card .floor-badge { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); }
-.guide-card.is-soon { border-style: dashed; border-color: var(--line-strong); color: var(--ink-soft); }
 .guide-room { display: block; font-size: 11px; letter-spacing: .12em; color: var(--ink-soft); }
-.guide-name { display: block; font-family: var(--font-display); font-size: clamp(16px, 4.6vw, 19px); letter-spacing: .08em; line-height: 1.5; }
-.is-soon .guide-name { font-family: var(--font-ui); font-size: 13px; }
 .floor-badge { display: inline-grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ink); border-radius: 50%; background: var(--surface); font-family: var(--font-display); font-size: 14px; letter-spacing: 0; color: var(--ink); }
 .floor-badge--large { width: 52px; height: 52px; font-size: 20px; }
 .tour { margin-top: 6px; }
@@ -278,5 +271,32 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .step-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 14px; padding: 0; list-style: none; }
 .step-tabs button { flex-direction: column; gap: 3px; width: 100%; min-height: 58px; padding: 6px 4px; border-radius: 14px; font-size: 12px; white-space: nowrap; }
 .guide-hint { margin: -6px 0 12px; font-size: 12px; color: var(--ink); }
-.guide-go { display: inline-flex; gap: 4px; margin-top: 6px; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: var(--on-ink); font-size: 11px; letter-spacing: .08em; }
 @media (prefers-reduced-motion: reduce) { .floor-door, .slide, .slide--cover { transition: none; } }
+
+/* Floor guide as a building directory: big floor numbers on the left, name plates on the right, top floor first. */
+.directory { display: grid; gap: 6px; margin: 4px 0 10px; padding: 8px; list-style: none; border-radius: 16px; background: var(--ink); }
+.directory-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: stretch; gap: 0; width: 100%; min-height: 66px; padding: 0; border: 0; border-radius: 10px; background: none; text-align: left; overflow: hidden; }
+.directory-row:hover { border-color: transparent; }
+.directory-floor { display: flex; align-items: baseline; justify-content: center; align-self: center; font-family: var(--font-display); font-size: 34px; line-height: 1; color: var(--on-ink); }
+.directory-floor small { font-size: 14px; margin-left: 1px; }
+.directory-plate { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 10px 12px; border-radius: 10px 0 0 10px; background: var(--surface); }
+.directory-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-family: var(--font-display); font-size: 18px; letter-spacing: .06em; color: var(--ink); }
+.directory-name small { font-family: var(--font-ui); font-size: 11px; letter-spacing: .1em; color: var(--ink-soft); }
+.directory-sub { font-size: 11px; line-height: 1.5; color: var(--ink-soft); }
+.directory-go { display: grid; place-items: center; width: 40px; border-radius: 0 10px 10px 0; background: var(--surface); border-left: 1px solid var(--line); font-size: 16px; color: var(--ink); }
+.directory-row:hover .directory-plate, .directory-row:hover .directory-go { background: #F3ECDF; }
+.directory-row.is-soon .directory-plate { border-radius: 10px; background: #E9E1D3; }
+.directory-row.is-soon .directory-name { color: var(--ink-soft); }
+.directory-row:focus-visible { outline-offset: 2px; }
+
+/* Flow and goal: what you do, and where it leads. */
+.floor-flow, .flow-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 6px; margin: 0 0 10px; font-size: 12px; color: var(--ink-soft); }
+.floor-flow span { display: inline-flex; align-items: center; gap: 6px; }
+.floor-flow i { font-style: normal; }
+.floor-flow strong, .flow-line strong { font-weight: 500; color: var(--ink); padding: 2px 10px; border: 1px solid var(--ink); border-radius: 999px; }
+.flow-line { margin: 4px auto 20px; max-width: 30em; }
+.floor-note { margin: 0 auto 12px; max-width: 30em; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--ink); text-wrap: balance; }
+.reassure { display: inline-block; margin: 0 0 16px; padding: 4px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-strong); font-size: 13px; color: var(--ink); }
+.hint strong { font-weight: 700; color: var(--ink); }
+.shuffle-row { display: flex; justify-content: center; gap: 8px; }
+.shuffle-row button { min-width: 48px; }

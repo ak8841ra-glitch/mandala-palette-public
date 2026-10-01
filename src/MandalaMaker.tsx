@@ -118,6 +118,10 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
   const [zone, setZone] = useState<Zone>('inner')
   const [selectedId, setSelectedId] = useState<number | null>(maker.layers.at(-1)?.id ?? null)
   const [confirm, setConfirm] = useState<'reset' | 'omakase' | null>(null)
+  // Every おまかせ shown in this visit, so a design seen earlier can be brought back.
+  const [history, setHistory] = useState<{ list: Maker[]; pos: number }>({ list: [], pos: -1 })
+  // What a confirmed おまかせ replacement will do: a fresh design, or a step through the history.
+  const [pending, setPending] = useState<() => void>(() => () => {})
   const [highlightId, setHighlightId] = useState<number | null>(null)
   const presetColors = presets.map(preset => preset.color)
   // Any hand edit ends the おまかせ state, so a new おまかせ then asks before replacing the work.
@@ -139,9 +143,28 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
     return () => clearTimeout(timer)
   }, [highlightId])
 
+  function show(next: Maker) {
+    setMaker(next); setSelectedId(null); setConfirm(null)
+  }
   function runOmakase() {
     const next = omakase(presets)
-    setMaker(next); setSelectedId(null); setConfirm(null)
+    setHistory(({ list, pos }) => {
+      const kept = [...list.slice(0, pos + 1), next].slice(-20)
+      return { list: kept, pos: kept.length - 1 }
+    })
+    show(next)
+  }
+  function step(by: -1 | 1) {
+    const pos = history.pos + by
+    const next = history.list[pos]
+    if (!next) return
+    setHistory({ ...history, pos })
+    show({ ...next, auto: true })
+  }
+  // Hand-edited work is never replaced without asking.
+  const guarded = (action: () => void) => () => {
+    if (maker.auto) action()
+    else { setPending(() => action); setConfirm('omakase') }
   }
 
   function update(patch: Partial<Layer>) {
@@ -184,6 +207,7 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
     </nav>
     <h1 ref={heading} tabIndex={-1} id="maker-title">パーツを選んで、<br />曼荼羅をつくる。</h1>
     <p className="lead">おまかせでも、3つくらい置くだけでも。</p>
+    <p className="flow-line">パーツを選ぶ → 色や形を整える → 保存する → <strong>今日の作品が1枚残る</strong></p>
 
     <div className="maker-stage">
       <canvas ref={canvas} width={900} height={900} className="maker-canvas" role="img"
@@ -196,12 +220,18 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
     {maker.layers.length > 0 && (confirm === 'omakase' ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="omakase-text">
       <p id="omakase-text" className="lead">今の作品を、別のおまかせに置き換えますか？</p>
       <div className="home-actions">
-        <button type="button" className="danger" onClick={runOmakase}>置き換える</button>
+        <button type="button" className="danger" onClick={() => pending()}>置き換える</button>
         <button type="button" className="button-quiet" onClick={() => setConfirm(null)}>やめる</button>
       </div>
     </div> : <div className="maker-shuffle">
-      <button type="button" className="button-quiet" onClick={() => maker.auto ? runOmakase() : setConfirm('omakase')}>別のおまかせ</button>
-      {maker.auto && <span className="hint">気に入ったら、下で色やパーツを変えられます。</span>}
+      <div className="shuffle-row">
+        <button type="button" className="button-quiet" disabled={history.pos <= 0} onClick={guarded(() => step(-1))} aria-label="ひとつ前のおまかせに戻る">←</button>
+        <button type="button" className="button-quiet" onClick={guarded(runOmakase)}>別のおまかせ</button>
+        <button type="button" className="button-quiet" disabled={history.pos >= history.list.length - 1} onClick={guarded(() => step(1))} aria-label="次のおまかせへ">→</button>
+      </div>
+      {history.list.length > 1
+        ? <span className="hint">{history.pos + 1} / {history.list.length}　←→で、さっきのデザインにも戻れます</span>
+        : maker.auto && <span className="hint">気に入ったら、下で色やパーツを変えられます。</span>}
     </div>)}
 
     <div className="maker-panel">

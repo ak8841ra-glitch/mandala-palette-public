@@ -8,16 +8,19 @@ import type { ReactNode, Ref } from 'react'
 export type RoomId = 'look' | 'make'
 interface Step { label: string; image: string }
 interface Floor {
-  floor: string; room: string; name: string; lead: string
+  floor: string; room: string; name: string; lead: string; goal?: string; summary?: string; note?: string
   cover?: string; steps?: readonly Step[]; meta?: string; enter?: RoomId
 }
 // Covers and step images are screenshots of the real screens (public/assets/tour).
 const FLOORS: readonly Floor[] = [
   { floor: '1F', room: '色と言葉の部屋', name: '自分を眺める', enter: 'look', lead: '色と言葉で、今の気分をかたちに。', cover: 'look-cover.jpg',
     steps: [{ label: '色を選ぶ', image: 'look-1.jpg' }, { label: '言葉を選ぶ', image: 'look-2.jpg' }, { label: '並べて眺める', image: 'look-3.jpg' }],
+    summary: '色と言葉を選んで置き、今の気分を眺める', goal: '今の気分に、自分で気づく',
+    note: '占いや診断ではありません。選んだものを眺めて、自分で「へぇ」と気づく時間です。',
     meta: '約3分・書かなくても大丈夫' },
   { floor: '2F', room: '曼荼羅のアトリエ', name: '自分でつくる', enter: 'make', lead: 'パーツを組み合わせて、自分だけの曼荼羅に。', cover: 'make-cover.jpg',
     steps: [{ label: 'パーツを選ぶ', image: 'make-1.jpg' }, { label: '色や形を整える', image: 'make-2.jpg' }, { label: '作品を保存', image: 'make-3.jpg' }],
+    summary: 'パーツと色を選んで、曼荼羅アートをつくる', goal: '今日の作品が1枚残る',
     meta: '約3分・おまかせでもOK・絵心はいりません' },
   { floor: '3F', room: 'ギャラリー', name: 'みんなの作品', lead: '公開された作品を、ゆっくり鑑賞できるフロア。' },
   { floor: '4F', room: 'わたしの展示室', name: '作品を収蔵する', lead: 'つくった作品を、日付ごとに飾っておけるフロア。' },
@@ -73,20 +76,20 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
     <nav className="floor-guide" aria-labelledby="floor-guide-title">
       <h2 id="floor-guide-title"><span>館内案内</span>FLOOR GUIDE</h2>
       <p className="guide-hint">フロアを押すと、すぐに始まります</p>
-      <div className="floor-guide-grid">
-        {FLOORS.map((floor, index) => floor.enter
-          ? <button key={floor.floor} type="button" className="guide-card" onClick={() => onEnter(floor.enter!)}>
-            <span className="floor-badge">{floor.floor}</span>
-            <span className="guide-room">{floor.room}</span>
-            <span className="guide-name">{floor.name}</span>
-            <span className="guide-go">すぐ入る<span aria-hidden="true">→</span></span>
+      {/* A building directory: the top floor first, the ground floor at the bottom. */}
+      <ol className="directory">
+        {FLOORS.map((floor, index) => ({ floor, index })).reverse().map(({ floor, index }) => <li key={floor.floor}>
+          <button type="button" className={`directory-row${floor.enter ? '' : ' is-soon'}`}
+            onClick={() => floor.enter ? onEnter(floor.enter) : goTo(index)}>
+            <span className="directory-floor">{floor.floor.replace('F', '')}<small>F</small></span>
+            <span className="directory-plate">
+              <span className="directory-name">{floor.name}<small>{floor.room}</small></span>
+              <span className="directory-sub">{floor.enter ? floor.summary : '準備中'}</span>
+            </span>
+            {floor.enter && <span className="directory-go" aria-hidden="true">→</span>}
           </button>
-          : <button key={floor.floor} type="button" className="guide-card is-soon" onClick={() => goTo(index)}>
-            <span className="floor-badge">{floor.floor}</span>
-            <span className="guide-room">{floor.room}</span>
-            <span className="guide-name">準備中</span>
-          </button>)}
-      </div>
+        </li>)}
+      </ol>
       {notice}
       <button type="button" className="back-button tour" onClick={() => goTo(0)}>はじめての方は、フロアをめぐって中をのぞく<span aria-hidden="true">↓</span></button>
     </nav>
@@ -94,10 +97,10 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
     <div className="floors">
       {/* Elevator indicator: pinned while riding through the floors. */}
       <div className="elevator" role="group" aria-label="フロアを移動">
-        <button type="button" className="elevator-step" aria-label="上の階へ" disabled={current === 0} onClick={() => goTo(current - 1)}>↑</button>
+        <button type="button" className="elevator-step" aria-label="上の階へ" disabled={current === FLOORS.length - 1} onClick={() => goTo(current + 1)}>↑</button>
         {FLOORS.map((floor, index) => <button key={floor.floor} type="button" className="elevator-floor" aria-current={index === current ? 'true' : undefined}
           aria-label={`${floor.floor} ${floor.room}`} onClick={() => goTo(index)}>{floor.floor}</button>)}
-        <button type="button" className="elevator-step" aria-label="下の階へ" disabled={current === FLOORS.length - 1} onClick={() => goTo(current + 1)}>↓</button>
+        <button type="button" className="elevator-step" aria-label="下の階へ" disabled={current === 0} onClick={() => goTo(current - 1)}>↓</button>
       </div>
 
       {FLOORS.map((floor, index) => <article key={floor.floor} ref={element => { floorRefs.current[index] = element }}
@@ -124,6 +127,11 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
             </button>
           </li>)}
         </ol>}
+        {floor.goal && <p className="floor-flow">
+          {floor.steps!.map(step => <span key={step.label}>{step.label}<i aria-hidden="true">→</i></span>)}
+          <strong>{floor.goal}</strong>
+        </p>}
+        {floor.note && <p className="floor-note">{floor.note}</p>}
         {floor.meta && <p className="room-meta">{floor.meta}</p>}
         {floor.enter
           ? <button type="button" className="button-primary room-enter" onClick={() => onEnter(floor.enter!)}>{floor.room}に入る<span aria-hidden="true">→</span></button>
