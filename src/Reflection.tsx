@@ -4,6 +4,7 @@ import { QUESTIONS, TRIANGLE_SPOTS, fullQuestion } from './guide'
 import type { Guide, Notes, Theme } from './guide'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
+import Steps from './Steps'
 
 // Match the site fonts and the ivory / charcoal palette in style.css.
 const font = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif'
@@ -138,65 +139,53 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   }
 
   return <section className="selection reflection" aria-labelledby="reflection-title">
-    <button className="back-button" type="button" onClick={onBack}>← 配置を調整する</button>
+    <nav className="selection-nav" aria-label="画面の移動">
+      <button className="back-button" type="button" onClick={onBack}>← 配置を調整する</button>
+      <Steps at={4} />
+    </nav>
     <h1 id="reflection-title" tabIndex={-1}>できあがった、今日のpalette。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
+    {/* The artwork comes first; the triangle's names rest lightly on their spots, and the rest follows a moment later. */}
     <div className="completed-art" aria-busy={!preview && !error}>
       {preview ? <img src={preview} alt={showWords ? 'キーワードを表示した完成した曼荼羅' : '色と配置だけを表示した完成した曼荼羅'} /> : <p>作品を準備しています…</p>}
+      {preview && guide === 'triangle' && TRIANGLE_SPOTS.map(spot => <span key={spot.number} className="spot-name"
+        style={{ left: `${spot.x * 100}%`, top: `${(spot.y > .5 ? spot.y + .15 : spot.y - .15) * 100}%` }}>
+        {spot.number} {spot.name}
+      </span>)}
     </div>
+    <div className="after-art">
     <button type="button" className="button-quiet" aria-pressed={!showWords} onClick={() => onShowWords(!showWords)}>
       {showWords ? 'キーワードを隠す' : 'キーワードを表示する'}
     </button>
 
-    {guide === 'triangle' && <div className="spot-meanings">
-      <h2>三角形の3つの場所</h2>
-      <p className="lead">{theme && theme.id !== 'free' ? `「${theme.label}」に重ねて` : 'こんな見方も'}、眺めてみると…</p>
-      <p className="hint">何の姿として見るかは、あなた次第。当てはまらなくても大丈夫です。</p>
-      <ul>
-        {TRIANGLE_SPOTS.map(spot => {
-          const words = wordsAt(cards, spot)
-          return <li key={spot.number}>
-            <span className="spot-number" aria-hidden="true">{spot.number}</span>
-            <span><strong>{spot.name}</strong><small>{spot.where}・{spot.note}</small>
-              {words.length > 0 && <span className="spot-words">{words.join('、')}</span>}</span>
-          </li>
-        })}
-      </ul>
-    </div>}
-
     <div className="story-editor">
-      <h2>眺めて、問いかけてみる</h2>
-      <p className="lead">気になる問いだけ、選んでみる。</p>
-      <p className="reassure">書かなくても大丈夫。ひと言でも、眺めるだけでも。</p>
-      <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
-        {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
-          onClick={() => toggleQuestion(question.id)}>
-          <span aria-hidden="true">{notes.questionIds.includes(question.id) ? '✓' : '＋'}</span>{question.text}
-        </button>)}
-      </div>
       {questions.filter(question => notes.questionIds.includes(question.id)).map(question => <div className="answer" key={question.id}>
         <label htmlFor={`answer-${question.id}`}>{question.text}{question.sub && <small>{question.sub}</small>}</label>
-        <textarea id={`answer-${question.id}`} rows={question.id === 'story' ? 6 : 3} maxLength={2000}
+        <textarea id={`answer-${question.id}`} rows={question.id === 'story' ? 5 : 3} maxLength={2000}
           value={notes.answers[question.id] ?? ''} placeholder="浮かんだことを、そのままに。"
           onChange={event => onNotes({ ...notes, answers: { ...notes.answers, [question.id]: event.target.value } })} />
       </div>)}
+      <details className="more-questions">
+        <summary>ほかの問い</summary>
+        <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
+          {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
+            onClick={() => toggleQuestion(question.id)}>
+            <span aria-hidden="true">{notes.questionIds.includes(question.id) ? '✓' : '＋'}</span>{question.text}
+          </button>)}
+        </div>
+      </details>
       <div className="answer">
-        <label htmlFor="art-title">タイトルをつけるなら？<small>なくても大丈夫です</small></label>
+        <label htmlFor="art-title">タイトルをつけるなら？</label>
         <input id="art-title" maxLength={30} value={notes.title} placeholder="たとえば「静かな朝の決意」"
           onChange={event => onNotes({ ...notes, title: event.target.value })} />
       </div>
-      <p className="hint">保存画像には、タイトル・答え・今のキーワード表示が入ります。</p>
     </div>
 
     <button type="button" className="button-primary" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
     {saved && <SavedResult saved={saved} title={notes.title.trim() || '曼荼羅palette'} />}
-    <div className="next-step">
-      <p className="lead">この色で、曼荼羅もつくってみる？</p>
-      <p className="hint">選んだ色が、パーツの色に並びます。ここで終えても大丈夫です。</p>
-      <button type="button" className="button-quiet" onClick={onMake}>曼荼羅をつくる<span aria-hidden="true">→</span></button>
-    </div>
+    <div className="next-step"><button type="button" className="button-quiet" onClick={onMake}>この色で曼荼羅をつくる<span aria-hidden="true">→</span></button></div>
     <div className="return-home-action"><button type="button" className="back-button" onClick={onHome}>トップへ戻る</button></div>
+    </div>
     {error && <p role="alert">{error}</p>}
-    <p className="hint">再読み込みすると消えます。残したいときは画像で保存を。</p>
   </section>
 }

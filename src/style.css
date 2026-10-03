@@ -129,7 +129,6 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .palette-chip[aria-pressed="true"] .palette-swatch { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
 .palette-name { font-size: 10px; color: var(--ink-soft); white-space: nowrap; }
 .palette-count { position: absolute; top: 0; right: 2px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--ink); color: var(--on-ink); font-size: 11px; line-height: 18px; }
-.picker-empty { margin-top: 20px; }
 .word-panel { margin: 16px 0 8px; padding: 14px 12px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
 .word-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .word-panel-head h2 { margin: 0; font-size: 18px; }
@@ -147,7 +146,6 @@ a { color: var(--ink); text-underline-offset: 3px; }
 
 /* Field */
 .guide-picker { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 0 12px; }
-.guide-picker > span { font-size: 12px; color: var(--ink-soft); }
 .layout-switch { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .layout-switch button { min-height: 40px; padding: 6px 14px; font-size: 13px; }
 .mandala-field { position: relative; container-type: inline-size; width: 100%; max-width: 620px; aspect-ratio: 1; margin: 16px auto; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
@@ -178,15 +176,10 @@ a { color: var(--ink); text-underline-offset: 3px; }
 
 /* Reflection */
 .reflection { max-width: 820px; }
-.completed-art { margin: 16px auto; aspect-ratio: 1; max-width: 620px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink-soft); box-shadow: var(--shadow); }
+.story-editor { max-width: 680px; margin: 28px auto 0; text-align: left; }
+.completed-art { position: relative; margin: 16px auto; aspect-ratio: 1; max-width: 620px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--ink-soft); box-shadow: var(--shadow); }
 .completed-art img { display: block; width: 100%; height: auto; }
-.spot-meanings, .story-editor { max-width: 680px; margin: 36px auto 0; text-align: left; }
-.spot-meanings ul { list-style: none; display: grid; gap: 10px; margin: 12px 0 0; padding: 0; }
-.spot-meanings li { display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .spot-number { font-family: var(--font-display); font-size: 24px; line-height: 1.2; }
-.spot-meanings li > span:last-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.spot-meanings strong { font-weight: 500; font-size: 16px; }
-.spot-meanings small { color: var(--ink-soft); font-size: 12px; }
 .spot-words { font-size: 14px; }
 .question-choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 24px; }
 .question-choices button { justify-content: flex-start; gap: 8px; min-height: 42px; padding: 6px 16px; font-size: 13px; text-align: left; }
@@ -198,7 +191,7 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .saved-result { max-width: 520px; margin: 20px auto; }
 .saved-result img { display: block; width: 100%; height: auto; margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; }
 .saved-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; }
-.next-step { max-width: 520px; margin: 32px auto 0; padding: 20px; border: 1px dashed var(--line-strong); border-radius: 18px; }
+.next-step { margin: 28px auto 0; }
 .return-home-action { margin: 20px 0; }
 
 /* Maker */
@@ -244,11 +237,30 @@ a { color: var(--ink); text-underline-offset: 3px; }
 
 
 
-/* Flow and goal: what you do, and where it leads. */
-.flow-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 6px; margin: 0 0 10px; font-size: 12px; color: var(--ink-soft); }
-.flow-line strong { font-weight: 500; color: var(--ink); padding: 2px 10px; border: 1px solid var(--ink); border-radius: 999px; }
-.flow-line { margin: 4px auto 20px; max-width: 30em; }
-.reassure { display: inline-block; margin: 0 0 16px; padding: 4px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-strong); font-size: 13px; color: var(--ink); }
 .hint strong { font-weight: 700; color: var(--ink); }
 .shuffle-row { display: flex; justify-content: center; gap: 8px; }
 .shuffle-row button { min-width: 48px; }
+
+/* Progress as four quiet dots: how far along, without numbers or words. */
+.step-dots { display: inline-flex; gap: 6px; padding: 6px 2px; }
+.step-dots i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink-soft); }
+.step-dots i[data-on] { background: var(--ink); border-color: var(--ink); }
+.field-section > .step-dots { display: flex; justify-content: center; margin: 0 auto 8px; }
+
+/* Before the first tap, the dishes glow one after another, inviting a touch. */
+@keyframes invite { 0%, 70%, 100% { box-shadow: 0 0 0 0 rgb(255 253 248 / 0); } 25% { box-shadow: 0 0 0 4px rgb(255 253 248 / .9), 0 0 18px 6px rgb(255 253 248 / .8); } }
+.color-wheel.is-inviting .wheel-hit { animation: invite 2s ease-in-out infinite; }
+
+/* Empty seats in the tray fill as words are picked; the button lights once three are in. */
+.picked-seat { flex: none; width: 64px; min-height: 36px; border: 1.5px dashed var(--line-strong); border-radius: 999px; }
+@keyframes ready { 0%, 100% { box-shadow: var(--shadow); } 50% { box-shadow: 0 0 0 4px rgb(58 54 57 / .16), var(--shadow); } }
+.tray-done.is-ready { animation: ready 1.8s ease-in-out 2; }
+
+/* The triangle's names rest on the finished artwork, after it has had a moment alone. */
+@keyframes arrive { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.spot-name { position: absolute; translate: -50% -50%; padding: 2px 10px; border-radius: 999px; background: rgb(255 253 248 / .88); font-size: clamp(11px, 2.6vw, 14px); white-space: nowrap; color: var(--ink); animation: arrive .8s ease-out 1.2s both; }
+.after-art { animation: arrive .8s ease-out .6s both; }
+.more-questions { margin: 0 0 22px; }
+.more-questions summary { cursor: pointer; font-size: 13px; color: var(--ink-soft); }
+.more-questions .question-choices { margin: 12px 0 0; }
+@media (prefers-reduced-motion: reduce) { .color-wheel.is-inviting .wheel-hit, .tray-done.is-ready, .spot-name, .after-art { animation: none; } }

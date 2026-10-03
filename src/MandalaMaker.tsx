@@ -206,8 +206,6 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
       <span className="step-label">曼荼羅をつくる</span>
     </nav>
     <h1 ref={heading} tabIndex={-1} id="maker-title">パーツを選んで、<br />曼荼羅をつくる。</h1>
-    <p className="lead">おまかせでも、3つくらい置くだけでも。</p>
-    <p className="flow-line">パーツを選ぶ → 色や形を整える → 保存する → <strong>今日の作品が1枚残る</strong></p>
 
     <div className="maker-stage">
       <canvas ref={canvas} width={900} height={900} className="maker-canvas" role="img"
@@ -229,9 +227,6 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
         <button type="button" className="button-quiet" onClick={guarded(runOmakase)}>別のおまかせ</button>
         <button type="button" className="button-quiet" disabled={history.pos >= history.list.length - 1} onClick={guarded(() => step(1))} aria-label="次のおまかせへ">→</button>
       </div>
-      {history.list.length > 1
-        ? <span className="hint">{history.pos + 1} / {history.list.length}　←→で、さっきのデザインにも戻れます</span>
-        : maker.auto && <span className="hint">気に入ったら、下で色やパーツを変えられます。</span>}
     </div>)}
 
     <div className="maker-panel">
@@ -251,7 +246,6 @@ export default function MandalaMaker({ maker, onMaker: setMaker, presets, headin
 
     {maker.layers.length > 0 && <div className="maker-panel">
       <h2>2. 選んで、整える</h2>
-      <p className="hint">パーツを選ぶと、作品の中でそのパーツだけが浮かび上がります。</p>
       <div className="layer-chips" role="group" aria-label="置いたパーツ（下ほど手前）">
         {maker.layers.map(layer => <button key={layer.id} type="button" className="layer-chip" aria-pressed={layer.id === selectedId}
           onClick={() => { setSelectedId(layer.id); setHighlightId(layer.id) }}>
