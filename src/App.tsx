@@ -37,7 +37,7 @@ function presetsFrom(cards: PlacedCard[]): Preset[] {
   return [...weights].map(([color, weight]) => ({ color, weight })).sort((a, b) => b.weight - a.weight)
 }
 
-const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
+const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()) || Object.keys(notes.reactions ?? {}).length)
 
 // New cards start on a ring around the center, so each one can be seen and grabbed.
 function ring(count: number, index: number) {

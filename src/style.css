@@ -54,7 +54,7 @@ button:disabled:hover { border-color: var(--line-strong); }
 .back-button { min-height: 44px; padding: 8px 4px; border-color: transparent; background: none; color: var(--ink-soft); font-size: 13px; }
 .back-button:hover { border-color: transparent; color: var(--ink); }
 button.danger { border-color: var(--danger); color: var(--danger); background: var(--surface); }
-button[aria-pressed="true"]:not(.wheel-hit):not(.keyword-choice):not(.swatch):not(.placed-card):not(.palette-chip) { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+button[aria-pressed="true"]:not(.wheel-hit):not(.card-hit):not(.words-toggle):not(.keyword-choice):not(.swatch):not(.placed-card):not(.palette-chip) { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
 a { color: var(--ink); text-underline-offset: 3px; }
 
 /* Enamel: a soft highlight and a shallow bevel over any flat color. */
@@ -264,3 +264,24 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .more-questions summary { cursor: pointer; font-size: 13px; color: var(--ink-soft); }
 .more-questions .question-choices { margin: 12px 0 0; }
 @media (prefers-reduced-motion: reduce) { .color-wheel.is-inviting .wheel-hit, .tray-done.is-ready, .spot-name, .after-art { animation: none; } }
+
+/* Focus: a tapped card stays bright while the rest of the artwork fades back. */
+.completed-art { container-type: inline-size; }
+.focus-veil { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--x) var(--y), transparent calc(var(--r) * 1cqw), rgb(255 253 248 / .62) calc(var(--r) * 1cqw + 2px)); animation: arrive .4s ease-out both; }
+.card-hit { position: absolute; z-index: 2; translate: -50% -50%; aspect-ratio: 1; min-height: 0; padding: 0; border: 0; border-radius: 50%; background: transparent; -webkit-tap-highlight-color: transparent; }
+.card-hit:hover { border: 0; box-shadow: 0 0 0 2px rgb(58 54 57 / .25); }
+.card-hit[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink); }
+.spot-name small { font-size: .9em; color: var(--ink-soft); }
+.focus { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 8px 0 20px; }
+.focus-ask { margin: 0; font-family: var(--font-display); font-size: 19px; letter-spacing: .08em; }
+.reaction-row { display: grid; grid-template-columns: repeat(2, minmax(0, 150px)); gap: 10px; animation: arrive .5s ease-out both; }
+.reaction-row button { min-height: 46px; padding: 8px 10px; font-size: 14px; }
+.hitokoto { max-width: 520px; margin: 0 auto 8px; padding: 16px 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); text-align: left; animation: arrive .5s ease-out both; }
+.hitokoto h2 { margin: 0 0 6px; font-family: var(--font-ui); font-size: 12px; letter-spacing: .14em; color: var(--ink-soft); }
+.hitokoto p { margin: 0; font-family: var(--font-display); font-size: 16px; line-height: 2; }
+@media (prefers-reduced-motion: reduce) { .focus-veil, .reaction-row, .hitokoto { animation: none; } }
+@keyframes invite-ink { 0%, 70%, 100% { box-shadow: 0 0 0 0 rgb(58 54 57 / 0); } 30% { box-shadow: 0 0 0 4px rgb(58 54 57 / .28); } }
+.completed-art.is-inviting .card-hit { animation: invite-ink 2.4s ease-in-out .8s infinite; }
+.completed-art.is-inviting .card-hit:nth-of-type(2n) { animation-delay: 1.6s; }
+.words-toggle { display: block; margin: -6px auto 4px; }
+@media (prefers-reduced-motion: reduce) { .completed-art.is-inviting .card-hit { animation: none; } }
