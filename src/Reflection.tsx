@@ -162,7 +162,8 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
     {/* The artwork comes first; the guide's names rest lightly on it, and the rest follows a moment later.
         Tapping a card brings it forward and lets the others fade, like a finger pointing at it in a session. */}
-    <div className={`completed-art${focusId || todayLines.length ? '' : ' is-inviting'}`} aria-busy={!preview && !error}>
+    <div className={`completed-art${focusId || todayLines.length ? '' : ' is-inviting'}`} aria-busy={!preview && !error}
+      onClick={event => { if (!(event.target as HTMLElement).closest('.card-hit')) setFocusId(null) }}>
       {preview ? <img src={preview} alt={showWords ? 'キーワードを表示した完成した曼荼羅' : '色と配置だけを表示した完成した曼荼羅'} /> : <p>作品を準備しています…</p>}
       {preview && focused && <span className="focus-veil" aria-hidden="true"
         style={{ '--x': `${focused.x * 100}%`, '--y': `${focused.y * 100}%`, '--r': DIAMETER[focused.size ?? 'medium'] * 50 } as CSSProperties} />}

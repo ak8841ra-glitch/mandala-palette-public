@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction, PointerEvent } from 'react'
 import type { Keyword } from './palette'
 import { GUIDES, GUIDE_TEXT, TRIANGLE_SPOTS } from './guide'
@@ -58,6 +58,17 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   const editing = rewrite && rewrite.id === selectedId ? rewrite : null
   const field = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; pointer: number; dx: number; dy: number } | null>(null)
+  // A tap on the card that is already selected lets go of it; a drag never does.
+  const tap = useRef<{ id: string; wasSelected: boolean; x: number; y: number; moved: boolean } | null>(null)
+
+  // A tap anywhere away from the cards and their controls lets go of the selection.
+  useEffect(() => {
+    const release = (event: globalThis.PointerEvent) => {
+      if (!(event.target as HTMLElement).closest?.('.placed-card, .card-size-controls, .delete-feedback')) setSelectedId(null)
+    }
+    document.addEventListener('pointerdown', release)
+    return () => document.removeEventListener('pointerdown', release)
+  }, [])
 
   const stack = [...cards].sort((a, b) => a.z - b.z)
   const depth = selected ? stack.indexOf(selected) : -1
@@ -77,6 +88,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
 
   function start(event: PointerEvent<HTMLButtonElement>, card: PlacedCard) {
     if (event.button !== 0 || drag.current) return
+    tap.current = { id: card.instanceId, wasSelected: selectedId === card.instanceId, x: event.clientX, y: event.clientY, moved: false }
     setSelectedId(card.instanceId)
     const rect = field.current!.getBoundingClientRect()
     drag.current = { id: card.instanceId, pointer: event.pointerId,
@@ -88,6 +100,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   function move(event: PointerEvent<HTMLButtonElement>) {
     const active = drag.current
     if (!active || active.pointer !== event.pointerId) return
+    if (tap.current && Math.hypot(event.clientX - tap.current.x, event.clientY - tap.current.y) > 6) tap.current.moved = true
     const rect = field.current!.getBoundingClientRect()
     const x = clamp((event.clientX - rect.left) / rect.width - active.dx)
     const y = clamp((event.clientY - rect.top) / rect.height - active.dy)
@@ -95,7 +108,6 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   }
 
   return <section className="selection field-section" aria-labelledby="field-title"
-    onPointerDown={event => { if (!(event.target as HTMLElement).closest('.placed-card, .card-size-controls')) setSelectedId(null) }}
     onKeyDown={event => { if (event.key === 'Escape') setSelectedId(null) }}>
     <Steps at={3} />
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
@@ -122,7 +134,11 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
         onPointerUp={() => { drag.current = null }}
         onPointerCancel={() => { drag.current = null }}
         onLostPointerCapture={() => { drag.current = null }}
-        onClick={() => setSelectedId(card.instanceId)}
+        onClick={() => {
+          const touched = tap.current
+          tap.current = null
+          setSelectedId(touched?.id === card.instanceId && touched.wasSelected && !touched.moved ? null : card.instanceId)
+        }}
         onFocus={() => setSelectedId(card.instanceId)}
         onKeyDown={event => {
           const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key]

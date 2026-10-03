@@ -131,7 +131,7 @@ export default function App() {
           前回のつづきから<span aria-hidden="true">→</span>
         </button>} />
       : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
-        onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
+        onMake={() => { setPresets(presetsFrom(cards)); setMaker(emptyMaker()); setScreen('make') }} /> : screen === 'make'
         ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
