@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { PlacedCard } from './MandalaField'
-import { QUESTIONS, TRIANGLE_SPOTS, fullQuestion } from './guide'
-import type { Guide, Notes, Theme } from './guide'
+import { AREAS, REACTIONS, TRIANGLE_SPOTS, hitokoto, placeOf } from './guide'
+import type { Guide, Notes, Reaction, ReactionKey, Theme } from './guide'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
+import Steps from './Steps'
 
 // Match the site fonts and the ivory / charcoal palette in style.css.
 const font = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif'
 const serif = '"Zen Old Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif'
+// Card diameters as a share of the field, matching MandalaField.
+const DIAMETER = { small: .20, medium: .28, large: .36 } as const
 const PAPER = '#FFFDF8', INK = '#3A3639', INK_SOFT = '#6E6868', LINE = '#E6DED2'
 
 function lines(ctx: CanvasRenderingContext2D, text: string, width: number) {
@@ -36,6 +40,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState<Saved | null>(null)
+  const [focusId, setFocusId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -72,15 +77,28 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   // Any edit makes the previously saved image stale.
   useEffect(() => { setSaved(null) }, [notes, preview])
 
-  const questions = QUESTIONS.filter(question => !question.guide || question.guide === guide)
-  const answered = questions.filter(question => notes.questionIds.includes(question.id) && notes.answers[question.id]?.trim())
+  const reactions = notes.reactions ?? {}
+  const focused = cards.find(card => card.instanceId === focusId)
+  const focusedReaction: Reaction = focused ? reactions[focused.instanceId] ?? {} : {}
+  // Today's lines: one for each card that got at least one tap, in the order they were placed.
+  const todayLines = cards.filter(card => Object.keys(reactions[card.instanceId] ?? {}).length)
+    .map(card => hitokoto(card.word, placeOf(guide, card), reactions[card.instanceId]!))
+  const memo = notes.answers.memo ?? ''
 
-  function toggleQuestion(id: string) {
-    const questionIds = notes.questionIds.includes(id)
-      ? notes.questionIds.filter(item => item !== id)
-      : questions.map(question => question.id).filter(item => item === id || notes.questionIds.includes(item))
-    onNotes({ ...notes, questionIds })
+  function react(key: ReactionKey, id: string) {
+    if (!focused) return
+    const next = { ...focusedReaction, [key]: focusedReaction[key] === id ? undefined : id }
+    for (const k of Object.keys(next) as ReactionKey[]) if (!next[k]) delete next[k]
+    const all = { ...reactions, [focused.instanceId]: next }
+    if (!Object.keys(next).length) delete all[focused.instanceId]
+    onNotes({ ...notes, reactions: all })
   }
+
+  // Under the guide-free field, the center label moves aside when a card already sits there.
+  const areas = (AREAS[guide] ?? []).map(area => area.name === 'まん中' && cards.some(card => Math.hypot(card.x - .5, card.y - .5) < .3) ? { ...area, y: .95 } : area)
+  // Each row appears once the row above has been touched.
+  const shownRows = REACTIONS.filter((_, i) => i === 0 || REACTIONS.slice(0, i).every(row => focusedReaction[row.key]))
+  const done = REACTIONS.every(row => focusedReaction[row.key])
 
   async function save() {
     if (!preview || busy) return
@@ -98,12 +116,10 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
           return `${spot.number} ${spot.name}${words.length ? `：${words.join('、')}` : ''}`
         }).flatMap(line => { measure.font = `28px ${font}`; return lines(measure, line, 1080) }),
       }] : []
-      const blocks = [...spots, ...answered.map(question => {
-        measure.font = `25px ${font}`
-        const asked = lines(measure, fullQuestion(question), 1080)
-        measure.font = `28px ${font}`
-        return { asked, answer: lines(measure, notes.answers[question.id]!.trim(), 1080) }
-      })]
+      measure.font = `28px ${font}`
+      const blocks = [...spots,
+        ...todayLines.length ? [{ asked: ['今日のひとこと'], answer: todayLines.flatMap(line => lines(measure, line, 1080)) }] : [],
+        ...memo.trim() ? [{ asked: ['メモ'], answer: lines(measure, memo.trim(), 1080) }] : []]
       const artTop = 100 + titleLines.length * 60 + (titleLines.length ? 20 : 0)
       const textTop = artTop + 1200 + 40
       const textHeight = (theme && theme.id !== 'free' ? 50 : 0)
@@ -138,65 +154,68 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   }
 
   return <section className="selection reflection" aria-labelledby="reflection-title">
-    <button className="back-button" type="button" onClick={onBack}>← 配置を調整する</button>
+    <nav className="selection-nav" aria-label="画面の移動">
+      <button className="back-button" type="button" onClick={onBack}>← 配置を調整する</button>
+      <Steps at={4} />
+    </nav>
     <h1 id="reflection-title" tabIndex={-1}>できあがった、今日のpalette。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
-    <div className="completed-art" aria-busy={!preview && !error}>
+    {/* The artwork comes first; the guide's names rest lightly on it, and the rest follows a moment later.
+        Tapping a card brings it forward and lets the others fade, like a finger pointing at it in a session. */}
+    <div className={`completed-art${focusId || todayLines.length ? '' : ' is-inviting'}`} aria-busy={!preview && !error}
+      onClick={event => { if (!(event.target as HTMLElement).closest('.card-hit')) setFocusId(null) }}>
       {preview ? <img src={preview} alt={showWords ? 'キーワードを表示した完成した曼荼羅' : '色と配置だけを表示した完成した曼荼羅'} /> : <p>作品を準備しています…</p>}
+      {preview && focused && <span className="focus-veil" aria-hidden="true"
+        style={{ '--x': `${focused.x * 100}%`, '--y': `${focused.y * 100}%`, '--r': DIAMETER[focused.size ?? 'medium'] * 50 } as CSSProperties} />}
+      {preview && guide === 'triangle' && TRIANGLE_SPOTS.map(spot => <span key={spot.number} className="spot-name"
+        style={{ left: `${spot.x * 100}%`, top: `${(spot.y > .5 ? spot.y + .15 : spot.y - .15) * 100}%` }}>
+        {spot.number} {spot.name}
+      </span>)}
+      {preview && areas.map(area => <span key={area.name} className="spot-name" style={{ left: `${area.x * 100}%`, top: `${area.y * 100}%` }}>
+        {area.name}{area.note && <small>：{area.note}</small>}
+      </span>)}
+      {preview && [...cards].sort((a, b) => a.z - b.z).map(card => {
+        const size = DIAMETER[card.size ?? 'medium'] * 100
+        return <button key={card.instanceId} type="button" className="card-hit" aria-pressed={card.instanceId === focusId}
+          aria-label={`「${card.word}」を見る`} style={{ left: `${card.x * 100}%`, top: `${card.y * 100}%`, width: `${size}%` }}
+          onClick={() => setFocusId(card.instanceId === focusId ? null : card.instanceId)} />
+      })}
     </div>
-    <button type="button" className="button-quiet" aria-pressed={!showWords} onClick={() => onShowWords(!showWords)}>
+    <div className="after-art">
+    <button type="button" className="back-button words-toggle" aria-pressed={!showWords} onClick={() => onShowWords(!showWords)}>
       {showWords ? 'キーワードを隠す' : 'キーワードを表示する'}
     </button>
-
-    {guide === 'triangle' && <div className="spot-meanings">
-      <h2>三角形の3つの場所</h2>
-      <p className="lead">{theme && theme.id !== 'free' ? `「${theme.label}」に重ねて` : 'こんな見方も'}、眺めてみると…</p>
-      <p className="hint">何の姿として見るかは、あなた次第。当てはまらなくても大丈夫です。</p>
-      <ul>
-        {TRIANGLE_SPOTS.map(spot => {
-          const words = wordsAt(cards, spot)
-          return <li key={spot.number}>
-            <span className="spot-number" aria-hidden="true">{spot.number}</span>
-            <span><strong>{spot.name}</strong><small>{spot.where}・{spot.note}</small>
-              {words.length > 0 && <span className="spot-words">{words.join('、')}</span>}</span>
-          </li>
-        })}
-      </ul>
+    <div className="focus" aria-live="polite">
+      <p className="focus-ask">{!focused ? 'どれが気になる？' : done ? 'ほかに気になるのは？' : `「${focused.word}」は、どう？`}</p>
+      {focused && shownRows.map(row => <div key={row.key} className="reaction-row" role="group">
+        {row.options.map(option => <button key={option.id} type="button" aria-pressed={focusedReaction[row.key] === option.id}
+          onClick={() => react(row.key, option.id)}>{option.label}</button>)}
+      </div>)}
+    </div>
+    {todayLines.length > 0 && <div className="hitokoto">
+      <h2>今日のひとこと</h2>
+      {todayLines.map(line => <p key={line}>{line}</p>)}
     </div>}
 
     <div className="story-editor">
-      <h2>眺めて、問いかけてみる</h2>
-      <p className="lead">気になる問いだけ、選んでみる。</p>
-      <p className="hint">ひと言でも、答えずに眺めるだけでも大丈夫です。</p>
-      <div className="question-choices" role="group" aria-label="答える問いを選ぶ">
-        {questions.map(question => <button key={question.id} type="button" aria-pressed={notes.questionIds.includes(question.id)}
-          onClick={() => toggleQuestion(question.id)}>
-          <span aria-hidden="true">{notes.questionIds.includes(question.id) ? '✓' : '＋'}</span>{question.text}
-        </button>)}
-      </div>
-      {questions.filter(question => notes.questionIds.includes(question.id)).map(question => <div className="answer" key={question.id}>
-        <label htmlFor={`answer-${question.id}`}>{question.text}{question.sub && <small>{question.sub}</small>}</label>
-        <textarea id={`answer-${question.id}`} rows={question.id === 'story' ? 6 : 3} maxLength={2000}
-          value={notes.answers[question.id] ?? ''} placeholder="浮かんだことを、そのままに。"
-          onChange={event => onNotes({ ...notes, answers: { ...notes.answers, [question.id]: event.target.value } })} />
-      </div>)}
+      <details className="more-questions" open={Boolean(memo)}>
+        <summary>ひとこと書く</summary>
+        <div className="answer">
+          <textarea id="memo" aria-label="ひとこと" rows={3} maxLength={2000} value={memo} placeholder="浮かんだことを、そのままに。"
+            onChange={event => onNotes({ ...notes, answers: { ...notes.answers, memo: event.target.value } })} />
+        </div>
+      </details>
       <div className="answer">
-        <label htmlFor="art-title">タイトルをつけるなら？<small>なくても大丈夫です</small></label>
+        <label htmlFor="art-title">タイトルをつけるなら？</label>
         <input id="art-title" maxLength={30} value={notes.title} placeholder="たとえば「静かな朝の決意」"
           onChange={event => onNotes({ ...notes, title: event.target.value })} />
       </div>
-      <p className="hint">保存画像には、タイトル・答え・今のキーワード表示が入ります。</p>
     </div>
-
     <button type="button" className="button-primary" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
     {saved && <SavedResult saved={saved} title={notes.title.trim() || '曼荼羅palette'} />}
-    <div className="next-step">
-      <p className="lead">この色で、曼荼羅もつくってみる？</p>
-      <p className="hint">選んだ色が、パーツの色に並びます。ここで終えても大丈夫です。</p>
-      <button type="button" className="button-quiet" onClick={onMake}>曼荼羅をつくる<span aria-hidden="true">→</span></button>
-    </div>
+    <div className="next-step"><button type="button" className="button-quiet" onClick={onMake}>この色で曼荼羅をつくる<span aria-hidden="true">→</span></button></div>
     <div className="return-home-action"><button type="button" className="back-button" onClick={onHome}>トップへ戻る</button></div>
+    </div>
     {error && <p role="alert">{error}</p>}
-    <p className="hint">再読み込みすると消えます。残したいときは画像で保存を。</p>
   </section>
 }

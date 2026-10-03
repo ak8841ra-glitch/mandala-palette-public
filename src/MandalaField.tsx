@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction, PointerEvent } from 'react'
 import type { Keyword } from './palette'
 import { GUIDES, GUIDE_TEXT, TRIANGLE_SPOTS } from './guide'
 import type { Guide, Theme } from './guide'
+import Steps from './Steps'
 
 export interface PlacedCard extends Keyword {
   instanceId: string
@@ -49,6 +50,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   onAdd: () => void
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [guidesOpen, setGuidesOpen] = useState(false)
   const [deleted, setDeleted] = useState<{ card: PlacedCard; index: number } | null>(null)
   const undoButton = useRef<HTMLButtonElement>(null)
   const selected = cards.find(card => card.instanceId === selectedId)
@@ -56,6 +58,17 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   const editing = rewrite && rewrite.id === selectedId ? rewrite : null
   const field = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; pointer: number; dx: number; dy: number } | null>(null)
+  // A tap on the card that is already selected lets go of it; a drag never does.
+  const tap = useRef<{ id: string; wasSelected: boolean; x: number; y: number; moved: boolean } | null>(null)
+
+  // A tap anywhere away from the cards and their controls lets go of the selection.
+  useEffect(() => {
+    const release = (event: globalThis.PointerEvent) => {
+      if (!(event.target as HTMLElement).closest?.('.placed-card, .card-size-controls, .delete-feedback')) setSelectedId(null)
+    }
+    document.addEventListener('pointerdown', release)
+    return () => document.removeEventListener('pointerdown', release)
+  }, [])
 
   const stack = [...cards].sort((a, b) => a.z - b.z)
   const depth = selected ? stack.indexOf(selected) : -1
@@ -75,6 +88,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
 
   function start(event: PointerEvent<HTMLButtonElement>, card: PlacedCard) {
     if (event.button !== 0 || drag.current) return
+    tap.current = { id: card.instanceId, wasSelected: selectedId === card.instanceId, x: event.clientX, y: event.clientY, moved: false }
     setSelectedId(card.instanceId)
     const rect = field.current!.getBoundingClientRect()
     drag.current = { id: card.instanceId, pointer: event.pointerId,
@@ -86,6 +100,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   function move(event: PointerEvent<HTMLButtonElement>) {
     const active = drag.current
     if (!active || active.pointer !== event.pointerId) return
+    if (tap.current && Math.hypot(event.clientX - tap.current.x, event.clientY - tap.current.y) > 6) tap.current.moved = true
     const rect = field.current!.getBoundingClientRect()
     const x = clamp((event.clientX - rect.left) / rect.width - active.dx)
     const y = clamp((event.clientY - rect.top) / rect.height - active.dy)
@@ -93,17 +108,19 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
   }
 
   return <section className="selection field-section" aria-labelledby="field-title"
-    onPointerDown={event => { if (!(event.target as HTMLElement).closest('.placed-card, .card-size-controls')) setSelectedId(null) }}
     onKeyDown={event => { if (event.key === 'Escape') setSelectedId(null) }}>
+    <Steps at={3} />
     <h1 id="field-title" tabIndex={-1}>心のままに、置いてみる。</h1>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
-    <div className="guide-picker" role="group" aria-labelledby="guide-label">
-      <span id="guide-label">配置ガイド</span>
-      <div className="layout-switch">
-        {GUIDES.map(item => <button key={item} type="button" aria-pressed={guide === item} onClick={() => onGuide(item)}>
+    {/* Start on ①②③; the other guides wait behind one small button. */}
+    <div className="guide-picker">
+      {guidesOpen ? <div className="layout-switch" role="group" aria-label="配置ガイド">
+        {GUIDES.map(item => <button key={item} type="button" aria-pressed={guide === item} onClick={() => { onGuide(item); setGuidesOpen(false) }}>
           {GUIDE_TEXT[item].label}
         </button>)}
-      </div>
+      </div> : <button type="button" className="back-button" aria-expanded="false" onClick={() => setGuidesOpen(true)}>
+        ガイド：{GUIDE_TEXT[guide].label}<span aria-hidden="true">▾</span>
+      </button>}
     </div>
     <p className="lead" id="field-help">{GUIDE_TEXT[guide].lead}</p>
     <div ref={field} className="mandala-field" role="group" aria-label="曼荼羅フィールド" aria-describedby="field-help">
@@ -117,7 +134,11 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
         onPointerUp={() => { drag.current = null }}
         onPointerCancel={() => { drag.current = null }}
         onLostPointerCapture={() => { drag.current = null }}
-        onClick={() => setSelectedId(card.instanceId)}
+        onClick={() => {
+          const touched = tap.current
+          tap.current = null
+          setSelectedId(touched?.id === card.instanceId && touched.wasSelected && !touched.moved ? null : card.instanceId)
+        }}
         onFocus={() => setSelectedId(card.instanceId)}
         onKeyDown={event => {
           const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[event.key]
@@ -171,7 +192,6 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
         }}>削除</button>
         </div>}
       </div>}
-      {!selected && <p className="hint">カードを選ぶと、大きさ・重なり・言葉を変えられます</p>}
     </div>
     <div className="delete-feedback" role="status">
       {deleted && <><span>「{deleted.card.word}」を削除しました。</span>
@@ -200,6 +220,5 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
     <div className="field-actions"><button type="button" onClick={onAdd}>言葉を追加 <span aria-hidden="true">＋</span></button>
 </div>
     <div className="place-action"><button type="button" disabled={!cards.length} onClick={onComplete}>完成 →</button></div>
-    <p className="hint">再読み込みすると配置はリセットされます。</p>
   </section>
 }

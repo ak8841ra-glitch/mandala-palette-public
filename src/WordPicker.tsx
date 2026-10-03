@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { FAMILIES, KEYWORDS, keywordsFor } from './palette'
 import type { Theme } from './guide'
+import Steps from './Steps'
 
 // The chip previews every shade of the family, like a slice of the color wheel.
 const swatch = (key: string) => {
@@ -15,6 +16,8 @@ const slot = (index: number) => {
   const angle = index * Math.PI / 4
   return { left: `${50 + 27.8 * Math.sin(angle)}%`, top: `${48.6 - 27.8 * Math.cos(angle)}%` }
 }
+
+const SEATS = 3
 
 export default function WordPicker({ heading, wheel, theme, picked, onPicked, open, onOpen, backLabel, onBack, doneLabel, onDone }: {
   heading: Ref<HTMLHeadingElement>
@@ -48,14 +51,13 @@ export default function WordPicker({ heading, wheel, theme, picked, onPicked, op
   return <section className="selection picker" aria-labelledby="picker-title">
     <nav className="selection-nav" aria-label="画面の移動">
       <button className="back-button" type="button" onClick={onBack}>← {backLabel}</button>
-      <span className="step-label">02 / 色と言葉を選ぶ</span>
+      <Steps at={2} />
     </nav>
     {theme && theme.id !== 'free' && <p className="theme-badge">テーマ：{theme.label}</p>}
     <h1 ref={heading} tabIndex={-1} id="picker-title">気になる色と言葉は？</h1>
-    <p className="lead">{theme?.prompt ? `${theme.prompt}、` : ''}色の輪をタップ。</p>
-    <p className="hint">いくつ開いても、何枚選んでも大丈夫です。</p>
+    {theme?.prompt && <p className="lead">{theme.prompt}</p>}
 
-    <div ref={wheelRef} className="color-wheel" role="group" aria-label="色を開く・閉じる">
+    <div ref={wheelRef} className={`color-wheel${open.length || picked.length ? '' : ' is-inviting'}`} role="group" aria-label="色を開く・閉じる">
       <img src={wheel} width="1000" height="1000" alt="曼荼羅paletteの色の輪。上から時計回りに白・黒、緑、青、紫、ピンク、赤、オレンジ、黄色。" draggable={false} />
       {FAMILIES.map((family, index) => {
         const { left, top } = slot(index)
@@ -76,7 +78,6 @@ export default function WordPicker({ heading, wheel, theme, picked, onPicked, op
       </button>)}
     </div>
 
-    {open.length === 0 && <p className="hint picker-empty">色の輪をタップすると、言葉が開きます。</p>}
     {open.map(key => {
       const family = FAMILIES.find(item => item.key === key)!
       return <div key={key} className="word-panel">
@@ -96,15 +97,17 @@ export default function WordPicker({ heading, wheel, theme, picked, onPicked, op
     })}
 
     <div className="picked-tray" role="region" aria-label="選んだ言葉">
-      {picked.length > 0 && <ul className="picked-list">
+      {/* Three empty seats show how many to pick, without saying it; more are welcome. */}
+      <ul className="picked-list">
         {picked.map(id => {
           const keyword = KEYWORDS.get(id)!
           return <li key={id}><button type="button" style={{ background: keyword.bg, color: keyword.ink }}
             aria-label={`「${keyword.word}」を外す`} onClick={() => toggleWord(id)}>{keyword.word}<span aria-hidden="true">×</span></button></li>
         })}
-      </ul>}
-      <button type="button" className="tray-done" disabled={!picked.length} onClick={onDone}>
-        {picked.length ? `${picked.length}枚を${doneLabel}` : '言葉を選んでください'}<span aria-hidden="true">→</span>
+        {Array.from({ length: Math.max(0, SEATS - picked.length) }, (_, i) => <li key={`seat-${i}`} className="picked-seat" aria-hidden="true" />)}
+      </ul>
+      <button type="button" className={`tray-done${picked.length >= SEATS ? ' is-ready' : ''}`} disabled={!picked.length} onClick={onDone}>
+        {picked.length ? `${picked.length}枚を${doneLabel}` : doneLabel}<span aria-hidden="true">→</span>
       </button>
     </div>
   </section>

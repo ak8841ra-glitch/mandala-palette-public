@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { KEYWORDS } from './palette'
 import WordPicker from './WordPicker'
 import Home from './Home'
+import Steps from './Steps'
 import type { RoomId } from './Home'
 import MandalaField from './MandalaField'
 import Reflection from './Reflection'
@@ -36,7 +37,7 @@ function presetsFrom(cards: PlacedCard[]): Preset[] {
   return [...weights].map(([color, weight]) => ({ color, weight })).sort((a, b) => b.weight - a.weight)
 }
 
-const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()))
+const hasNotes = (notes: Notes) => Boolean(notes.title.trim() || Object.values(notes.answers).some(answer => answer.trim()) || Object.keys(notes.reactions ?? {}).length)
 
 // New cards start on a ring around the center, so each one can be seen and grabbed.
 function ring(count: number, index: number) {
@@ -130,16 +131,15 @@ export default function App() {
           前回のつづきから<span aria-hidden="true">→</span>
         </button>} />
       : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
-        onMake={() => { setPresets(presetsFrom(cards)); setScreen('make') }} /> : screen === 'make'
+        onMake={() => { setPresets(presetsFrom(cards)); setMaker(emptyMaker()); setScreen('make') }} /> : screen === 'make'
         ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
             ← {cards.length ? '配置に戻る' : 'トップへ戻る'}
           </button>
-          <span className="step-label">01 / テーマを選ぶ</span>
+          <Steps at={1} />
         </nav>
         <h1 ref={heading} tabIndex={-1} id="theme-title">今日は、何について<br />眺めてみる？</h1>
-        <p className="lead">決めずに始めても大丈夫。</p>
         <div className="theme-grid" role="group" aria-label="テーマを1つ選ぶ">
           {THEMES.map(item => <button key={item.id} type="button" className="theme-choice"
             aria-pressed={theme?.id === item.id}
