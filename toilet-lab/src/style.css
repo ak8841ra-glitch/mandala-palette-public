@@ -686,6 +686,140 @@ button {
   color: #fff;
 }
 
+/* ---------- 迷子パーツ ---------- */
+.speech {
+  position: relative;
+  margin: 8px 0 4px;
+  padding: 10px 14px;
+  background: #fff7ef;
+  border: 1.5px solid #f3c99b;
+  border-radius: 14px;
+  text-align: left;
+}
+
+.speech p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.speech-name {
+  display: inline-block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c4651a;
+}
+
+.quiz-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lost-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--select);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(240, 138, 36, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.lost-tag.on {
+  opacity: 1;
+}
+
+.stage-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.stage-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.stage-list li.locked {
+  background: #f4f6f5;
+  color: var(--sub);
+}
+
+.stage-no {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  flex: none;
+}
+
+.locked .stage-no {
+  background: #c5cecc;
+}
+
+.stage-body {
+  flex: 1;
+  min-width: 120px;
+  display: grid;
+}
+
+.stage-body small {
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.stage-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stage-actions button {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.stage-actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.stage-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.stage-lock .icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* ---------- 参考資料 ---------- */
 .modal-back {
   position: absolute;

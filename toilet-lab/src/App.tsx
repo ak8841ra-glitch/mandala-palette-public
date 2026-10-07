@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PART_MAP, type PartId } from './data/parts'
 import { QUIZ } from './data/info'
-import { Viewer } from './three/Viewer'
+import { Viewer, type LostEvent } from './three/Viewer'
+import { pickLost } from './data/game'
+import { GameCard, StageSelect, type Game } from './components/Game'
 import { FLOW_STEPS } from './three/flow'
 import { SearchBox } from './components/SearchBox'
 import { InfoPanel } from './components/InfoPanel'
@@ -40,8 +42,34 @@ function Stage({ onFail }: { onFail: () => void }) {
   const [quiz, setQuiz] = useState<Quiz | null>(null)
   const [refsOpen, setRefsOpen] = useState(false)
   const [hint, setHint] = useState(true)
+  const [game, setGame] = useState<Game | null>(null)
+  const [stagesOpen, setStagesOpen] = useState(false)
   const quizRef = useRef<Quiz | null>(null)
   quizRef.current = quiz
+  const gameRef = useRef<Game | null>(null)
+  gameRef.current = game
+
+  // 迷子パーツの進みぐあい（3D側からの知らせ）
+  const handleLost = useCallback((e: LostEvent) => {
+    const g = gameRef.current
+    if (!g) return
+    if (e.type === 'grab') setGame({ ...g, status: 'holding' })
+    else if (e.type === 'wrong') setGame({ ...g, status: 'wrong', near: e.near, misses: g.misses + 1 })
+    else if (e.type === 'returning') setGame({ ...g, status: 'returning' })
+    else if (e.type === 'placed') {
+      setGame({ ...g, status: 'flushing' })
+      // 戻れたら、ちゃんと働けるか水を流して見せる
+      setTimeout(() => viewer.current?.startFlush(), 500)
+    }
+  }, [])
+
+  const handleFlushDone = useCallback(() => {
+    const g = gameRef.current
+    if (g && g.status === 'flushing') {
+      setGame({ ...g, status: 'cleared' })
+      viewer.current?.resetView()
+    }
+  }, [])
 
   const handlePick = useCallback((id: PartId | null) => {
     const v = viewer.current
@@ -54,7 +82,7 @@ function Stage({ onFail }: { onFail: () => void }) {
       setQuiz({ ...q, status: id === target ? 'right' : 'wrong', picked: id })
       return
     }
-    if (q) return
+    if (q || gameRef.current) return
     v?.select(id)
     setSelected(id)
   }, [])
@@ -65,8 +93,10 @@ function Stage({ onFail }: { onFail: () => void }) {
       viewer.current = new Viewer(hostRef.current, labelRef.current, {
         onSelect: handlePick,
         onFlushStep: setStep,
+        onFlushDone: handleFlushDone,
         onModeChange: setInside,
         onInteract: () => setHint(false),
+        onLost: handleLost,
       })
     } catch (e) {
       console.error(e)
@@ -76,7 +106,7 @@ function Stage({ onFail }: { onFail: () => void }) {
       viewer.current?.dispose()
       viewer.current = null
     }
-  }, [handlePick, onFail])
+  }, [handlePick, handleLost, handleFlushDone, onFail])
 
   useEffect(() => {
     const t = setTimeout(() => setHint(false), 7000)
@@ -84,8 +114,10 @@ function Stage({ onFail }: { onFail: () => void }) {
   }, [])
 
   // 説明パネルや上のカードに隠れない位置に模型が来るよう、ビューアーに余白を伝える
-  const showPanel = !!selected && !quiz
-  const showTopCard = step !== null || !!quiz
+  const playing = !!quiz || !!game
+  const showGameCard = !!game && game.status !== 'flushing'
+  const showPanel = !!selected && !playing
+  const showTopCard = step !== null || !!quiz || showGameCard
   useEffect(() => {
     const v = viewer.current
     if (!v) return
@@ -107,14 +139,16 @@ function Stage({ onFail }: { onFail: () => void }) {
       ro.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [showPanel, showTopCard, selected, step, quiz])
+  }, [showPanel, showTopCard, selected, step, quiz, game])
 
   useEffect(() => {
-    viewer.current?.setLabelsVisible(!quiz || quiz.status === 'done')
-  }, [quiz])
+    const hideForQuiz = !!quiz && quiz.status !== 'done'
+    const hideForGame = !!game && game.status !== 'cleared'
+    viewer.current?.setLabelsVisible(!hideForQuiz && !hideForGame)
+  }, [quiz, game])
 
   const choose = (id: PartId) => {
-    if (quiz) return
+    if (playing) return
     viewer.current?.select(id, { fly: true })
     setSelected(id)
     setHint(false)
@@ -138,9 +172,31 @@ function Stage({ onFail }: { onFail: () => void }) {
     setHint(false)
   }
 
+  const startLost = () => {
+    const v = viewer.current
+    if (!v) return
+    const lost = pickLost(game?.part)
+    setStagesOpen(false)
+    setQuiz(null)
+    setSelected(null)
+    setGame({ part: lost.id, status: 'find', misses: 0 })
+    v.startLost(lost.id)
+    setHint(false)
+  }
+
+  const endGame = () => {
+    viewer.current?.endLost()
+    viewer.current?.stopFlush()
+    viewer.current?.select(null)
+    setSelected(null)
+    setGame(null)
+  }
+
   const startQuiz = () => {
     const v = viewer.current
     if (!v) return
+    if (game) endGame()
+    setStagesOpen(false)
     if (step !== null) v.stopFlush()
     close()
     v.setInside(false)
@@ -178,10 +234,10 @@ function Stage({ onFail }: { onFail: () => void }) {
             トイレのしくみ<small>3D模型</small>
           </span>
         </div>
-        {!quiz && <SearchBox onChoose={choose} />}
+        {!playing && <SearchBox onChoose={choose} />}
       </header>
 
-      {step !== null && (
+      {step !== null && !showGameCard && (
         <div className="caption" role="status" ref={cardRef} data-label-block>
           <div className="caption-step">
             {FLOW_STEPS.map((_, i) => (
@@ -200,6 +256,18 @@ function Stage({ onFail }: { onFail: () => void }) {
             </span>
           </div>
         </div>
+      )}
+
+      {game && showGameCard && (
+        <GameCard
+          cardRef={cardRef}
+          game={game}
+          onAgain={startLost}
+          onStages={() => {
+            endGame()
+            setStagesOpen(true)
+          }}
+        />
       )}
 
       {quiz && <QuizCard cardRef={cardRef} quiz={quiz} onNext={nextQuiz} onEnd={endQuiz} onRetry={() => setQuiz({ ...quiz, status: 'ask' })} />}
@@ -224,13 +292,16 @@ function Stage({ onFail }: { onFail: () => void }) {
           <Icon name={inside ? 'eye' : 'layers'} />
           <span>{inside ? '外側を見る' : '内部を見る'}</span>
         </button>
-        <button className={`primary ${step !== null ? 'active' : ''}`} onClick={flush} disabled={!!quiz}>
+        <button className={`primary ${step !== null ? 'active' : ''}`} onClick={flush} disabled={playing}>
           <Icon name={step !== null ? 'stop' : 'flush'} />
           <span>{step !== null ? '止める' : '水を流す'}</span>
         </button>
-        <button onClick={quiz ? endQuiz : startQuiz} className={quiz ? 'active' : ''}>
-          <Icon name="quiz" />
-          <span>{quiz ? 'クイズをやめる' : '部品クイズ'}</span>
+        <button
+          onClick={quiz ? endQuiz : game ? endGame : () => setStagesOpen(true)}
+          className={playing ? 'active' : ''}
+        >
+          <Icon name={playing ? 'close' : 'play'} />
+          <span>{quiz ? 'クイズをやめる' : game ? 'ゲームをやめる' : 'あそぶ'}</span>
         </button>
       </nav>
 
@@ -240,6 +311,7 @@ function Stage({ onFail }: { onFail: () => void }) {
       </footer>
 
       {refsOpen && <RefsModal onClose={() => setRefsOpen(false)} />}
+      {stagesOpen && <StageSelect onClose={() => setStagesOpen(false)} onLost={startLost} onQuiz={startQuiz} />}
     </div>
   )
 }

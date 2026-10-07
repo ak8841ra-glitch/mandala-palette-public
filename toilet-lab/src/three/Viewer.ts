@@ -4,11 +4,30 @@ import { PART_MAP, PARTS, type PartId } from '../data/parts'
 import { buildToilet, type ToiletModel } from './buildModel'
 import { FLOW_DURATION, FLOW_STEPS, FLOW_STREAMS, flowState } from './flow'
 
+export type LostEvent = { type: 'grab' } | { type: 'wrong'; near: PartId | null } | { type: 'returning' } | { type: 'placed' }
+
 type Callbacks = {
   onSelect: (id: PartId | null) => void
   onFlushStep: (step: number | null) => void
+  onFlushDone: () => void
   onModeChange: (inside: boolean) => void
   onInteract: () => void
+  onLost: (e: LostEvent) => void
+}
+
+// 迷子パーツ：模型から外して運べるようにした部品
+type Lost = {
+  id: PartId
+  carrier: THREE.Group
+  items: { mesh: THREE.Mesh; parent: THREE.Object3D; pos: THREE.Vector3; quat: THREE.Quaternion; scale: THREE.Vector3 }[]
+  home: THREE.Vector3 // 元の場所（運ぶ入れ物の中心）
+  homePoints: THREE.Vector3[] // 当たり判定に使う、元の場所の代表点
+  radius: number
+  phase: 'leaving' | 'away' | 'drag' | 'returning'
+  from: THREE.Vector3
+  t: number
+  dur: number
+  tag: HTMLDivElement
 }
 
 type Tween = {
@@ -83,6 +102,11 @@ export class Viewer {
   private pulse = 0
   private glassAmt = 0
   private blockers: { x0: number; y0: number; x1: number; y1: number }[] = []
+  private lost: Lost | null = null
+  private grab: { x: number; y: number; moved: boolean; plane: THREE.Plane } | null = null
+  private suppressTap = false
+  private clockT = 0
+  private homeOnInsets = false
 
   constructor(host: HTMLElement, labelLayer: HTMLElement, cb: Callbacks) {
     this.host = host
@@ -133,6 +157,9 @@ export class Viewer {
     this.buildLabels()
 
     const el = this.renderer.domElement
+    el.addEventListener('pointerdown', this.onLostDown, { capture: true })
+    el.addEventListener('pointermove', this.onLostMove)
+    el.addEventListener('pointerup', this.onLostUp, { capture: true })
     el.addEventListener('pointerdown', this.onDown)
     el.addEventListener('pointerup', this.onUp)
 
@@ -165,8 +192,12 @@ export class Viewer {
     cancelAnimationFrame(this.raf)
     this.resizeObs.disconnect()
     this.controls.dispose()
-    this.renderer.domElement.removeEventListener('pointerdown', this.onDown)
-    this.renderer.domElement.removeEventListener('pointerup', this.onUp)
+    const el = this.renderer.domElement
+    el.removeEventListener('pointerdown', this.onLostDown, { capture: true })
+    el.removeEventListener('pointermove', this.onLostMove)
+    el.removeEventListener('pointerup', this.onLostUp, { capture: true })
+    el.removeEventListener('pointerdown', this.onDown)
+    el.removeEventListener('pointerup', this.onUp)
     this.renderer.dispose()
     this.renderer.domElement.remove()
     this.labelLayer.innerHTML = ''
@@ -197,6 +228,11 @@ export class Viewer {
 
   setInsets(right: number, bottom: number, top = 0) {
     this.insetTarget = { right, bottom, top }
+    // 上のカードが出たあとで、模型全体が残りの場所に収まるよう引き直す
+    if (this.homeOnInsets) {
+      this.homeOnInsets = false
+      this.resetView()
+    }
   }
 
   startFlush() {
@@ -207,9 +243,205 @@ export class Viewer {
   }
 
   stopFlush() {
+    if (this.flushT === null) return
     this.flushT = null
     this.applyFlow(FLOW_DURATION)
     this.setFlushStep(null)
+    this.cb.onFlushDone()
+  }
+
+  // ---------- 迷子パーツ ----------
+
+  startLost(id: PartId) {
+    this.endLost()
+    this.stopFlush()
+    this.select(null)
+    this.setInside(true)
+    this.resetView()
+    this.homeOnInsets = true
+    const meshes = this.model.partMeshes.get(id) ?? []
+    this.model.root.updateMatrixWorld(true)
+    const box = new THREE.Box3()
+    for (const m of meshes) box.expandByObject(m)
+    const home = box.getCenter(new THREE.Vector3())
+    const homePoints = [home.clone()]
+    for (const m of meshes) {
+      const g = m.geometry as THREE.BufferGeometry & { parameters?: { path?: THREE.Curve<THREE.Vector3> } }
+      if (g.parameters?.path) homePoints.push(...g.parameters.path.getPoints(10).map((p) => p.applyMatrix4(m.matrixWorld)))
+      else homePoints.push(new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()))
+    }
+    const carrier = new THREE.Group()
+    carrier.position.copy(home)
+    this.model.root.add(carrier)
+    carrier.updateMatrixWorld(true)
+    const items = meshes.map((mesh) => {
+      const item = {
+        mesh,
+        parent: mesh.parent!,
+        pos: mesh.position.clone(),
+        quat: mesh.quaternion.clone(),
+        scale: mesh.scale.clone(),
+      }
+      carrier.attach(mesh)
+      return item
+    })
+    const tag = document.createElement('div')
+    tag.className = 'lost-tag'
+    tag.textContent = `${PART_MAP[id].name}（迷子）`
+    this.labelLayer.appendChild(tag)
+    this.lost = {
+      id,
+      carrier,
+      items,
+      home,
+      homePoints,
+      radius: box.getSize(new THREE.Vector3()).length() / 2,
+      phase: 'leaving',
+      from: home.clone(),
+      t: 0,
+      dur: 1.3,
+      tag,
+    }
+    this.selected = id
+    this.applySelection()
+  }
+
+  endLost() {
+    const l = this.lost
+    if (!l) return
+    for (const it of l.items) {
+      it.parent.add(it.mesh)
+      it.mesh.position.copy(it.pos)
+      it.mesh.quaternion.copy(it.quat)
+      it.mesh.scale.copy(it.scale)
+    }
+    l.carrier.removeFromParent()
+    l.tag.remove()
+    this.lost = null
+    this.grab = null
+    this.controls.enabled = true
+  }
+
+  private rayAt(cx: number, cy: number) {
+    const r = this.renderer.domElement.getBoundingClientRect()
+    const ndc = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1)
+    this.raycaster.setFromCamera(ndc, this.camera)
+    return this.raycaster.ray
+  }
+
+  private hitsLost(cx: number, cy: number) {
+    const l = this.lost
+    if (!l) return false
+    const ray = this.rayAt(cx, cy)
+    if (this.raycaster.intersectObject(l.carrier, true).length) return true
+    const c = l.carrier.getWorldPosition(new THREE.Vector3())
+    return ray.distanceToPoint(c) < Math.max(0.6, l.radius * 0.7)
+  }
+
+  private onLostDown = (e: PointerEvent) => {
+    const l = this.lost
+    if (!l || l.phase !== 'away' || !this.hitsLost(e.clientX, e.clientY)) return
+    // 迷子の子をつかんだら、模型は回さない
+    this.controls.enabled = false
+    this.renderer.domElement.setPointerCapture(e.pointerId)
+    const camDir = this.camera.getWorldDirection(new THREE.Vector3())
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camDir, this.controls.target)
+    this.grab = { x: e.clientX, y: e.clientY, moved: false, plane }
+  }
+
+  private onLostMove = (e: PointerEvent) => {
+    const g = this.grab
+    const l = this.lost
+    if (!g || !l) return
+    if (!g.moved && Math.hypot(e.clientX - g.x, e.clientY - g.y) < 7) return
+    g.moved = true
+    l.phase = 'drag'
+    const p = this.rayAt(e.clientX, e.clientY).intersectPlane(g.plane, new THREE.Vector3())
+    if (p) l.carrier.position.copy(p)
+  }
+
+  private onLostUp = (e: PointerEvent) => {
+    const g = this.grab
+    if (!g) return
+    this.grab = null
+    this.controls.enabled = true
+    this.suppressTap = true
+    if (g.moved) this.tryPlace(e.clientX, e.clientY)
+    else this.cb.onLost({ type: 'grab' })
+  }
+
+  private tryPlace(cx: number, cy: number) {
+    const l = this.lost
+    if (!l) return
+    const ray = this.rayAt(cx, cy)
+    const near = Math.min(...l.homePoints.map((p) => ray.distanceToPoint(p)))
+    const picked = this.pick(cx, cy, l.id)
+    // 元の場所の近く、または元の場所に残した当たり判定（見えない）を押したら正解
+    const ok = near < 0.6 || picked === l.id
+    if (ok) {
+      l.phase = 'returning'
+      l.from = l.carrier.position.clone()
+      l.t = 0
+      l.dur = 0.9
+      this.cb.onLost({ type: 'returning' })
+    } else {
+      if (l.phase === 'drag') {
+        l.phase = 'leaving'
+        l.from = l.carrier.position.clone()
+        l.t = 0
+        l.dur = 0.6
+      }
+      this.cb.onLost({ type: 'wrong', near: picked })
+    }
+  }
+
+  // 迷子の子が待つ場所：模型を回しても画面の右下あたりに見えるよう、カメラから決める
+  private lostSpot() {
+    const narrow = this.width / this.height < 0.8
+    const ndc = new THREE.Vector3(narrow ? 0.5 : 0.6, narrow ? -0.58 : -0.2, 0.5)
+    const dir = ndc.unproject(this.camera).sub(this.camera.position).normalize()
+    const d = this.camera.position.distanceTo(this.controls.target) * 0.7
+    return this.camera.position.clone().add(dir.multiplyScalar(d))
+  }
+
+  private updateLost(dt: number) {
+    const l = this.lost
+    if (!l) return
+    const c = l.carrier
+    if (l.phase === 'leaving' || l.phase === 'returning') {
+      l.t += dt
+      const k = easeInOut(Math.min(1, l.t / l.dur))
+      const to = l.phase === 'leaving' ? this.lostSpot() : l.home
+      c.position.lerpVectors(l.from, to, k)
+      c.position.y += Math.sin(k * Math.PI) * 1.2
+      c.rotation.z *= 1 - k
+      if (l.t >= l.dur) {
+        if (l.phase === 'leaving') l.phase = 'away'
+        else {
+          c.position.copy(l.home)
+          c.rotation.set(0, 0, 0)
+          const id = l.id
+          this.endLost()
+          this.selected = id
+          this.applySelection()
+          this.cb.onLost({ type: 'placed' })
+          return
+        }
+      }
+    } else if (l.phase === 'away') {
+      // ふわふわ待っている
+      c.position.copy(this.lostSpot())
+      c.position.y += Math.sin(this.clockT * 2.2) * 0.12
+      c.rotation.z = Math.sin(this.clockT * 1.6) * 0.12
+    }
+    // 名札
+    const v = c.getWorldPosition(new THREE.Vector3())
+    v.y += Math.max(0.6, l.radius * 0.6)
+    v.project(this.camera)
+    const x = (v.x * 0.5 + 0.5) * this.width
+    const y = (-v.y * 0.5 + 0.5) * this.height
+    l.tag.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`
+    l.tag.classList.toggle('on', l.phase !== 'returning' && v.z < 1)
   }
 
   get isFlushing() {
@@ -220,8 +452,10 @@ export class Viewer {
 
   private homePosition(target: THREE.Vector3, dir: THREE.Vector3, scale = 1) {
     // 模型全体（高さ約9、幅約5）が画面に収まる距離を求める
-    const vfov = THREE.MathUtils.degToRad(this.baseFov)
-    const aspect = this.width / Math.max(1, this.height)
+    // 上下のカードやパネルで隠れる分を除いた高さで考える
+    const visibleH = Math.max(200, this.height - this.insetTarget.top - this.insetTarget.bottom)
+    const vfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(this.baseFov) / 2) * (visibleH / this.height))
+    const aspect = this.width / visibleH
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
     const halfH = 5.4
     const halfW = 3.9
@@ -354,19 +588,28 @@ export class Viewer {
   private onUp = (e: PointerEvent) => {
     const d = this.down
     this.down = null
+    if (this.suppressTap) {
+      this.suppressTap = false
+      return
+    }
     if (!d) return
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 600) return
+    if (this.lost) {
+      // 迷子パーツ中は、タップした場所に連れていく
+      if (this.lost.phase === 'away') this.tryPlace(e.clientX, e.clientY)
+      return
+    }
     const id = this.pick(e.clientX, e.clientY)
     this.cb.onSelect(id)
   }
 
-  private pick(cx: number, cy: number): PartId | null {
-    const r = this.renderer.domElement.getBoundingClientRect()
-    const ndc = new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1)
-    this.raycaster.setFromCamera(ndc, this.camera)
+  // ignoreMoved: 迷子として外に出ている部品のメッシュは無視する（元の場所の当たり判定は残す）
+  private pick(cx: number, cy: number, ignoreMoved?: PartId): PartId | null {
+    this.rayAt(cx, cy)
     const hits = this.raycaster.intersectObjects(this.model.pickables, false)
     const usable = hits.filter((h) => {
       const id = h.object.userData.partId as PartId
+      if (ignoreMoved && id === ignoreMoved && !h.object.userData.proxy) return false
       return this.inside || !PART_MAP[id].inside
     })
     if (!usable.length) return null
@@ -682,8 +925,11 @@ export class Viewer {
       }
       this.setFlushStep(step)
       this.applyFlow(Math.min(t, FLOW_DURATION))
+      if (this.flushT === null) this.cb.onFlushDone()
     }
     this.updateChain()
+    this.clockT += dt
+    this.updateLost(dt)
 
     // 選択中の部品をゆっくり明滅
     if (this.selected) {
