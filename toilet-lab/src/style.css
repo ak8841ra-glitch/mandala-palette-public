@@ -12,6 +12,7 @@
   --radius: 14px;
   --shadow: 0 6px 24px rgba(35, 48, 47, 0.12);
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
   font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
@@ -133,7 +134,7 @@ button {
 /* ---------- 上部 ---------- */
 .top {
   position: absolute;
-  top: 12px;
+  top: calc(12px + var(--safe-t));
   left: 12px;
   right: 12px;
   display: flex;
@@ -376,7 +377,7 @@ button {
 /* ---------- 説明パネル ---------- */
 .panel {
   position: absolute;
-  top: 66px;
+  top: calc(66px + var(--safe-t));
   right: 12px;
   width: 360px;
   max-height: calc(100% - 66px - 100px);
@@ -551,7 +552,7 @@ button {
 /* ---------- 水の流れの説明 ---------- */
 .caption {
   position: absolute;
-  top: 66px;
+  top: calc(66px + var(--safe-t));
   left: 50%;
   transform: translateX(-50%);
   width: min(560px, calc(100% - 24px));
@@ -614,7 +615,7 @@ button {
 /* ---------- クイズ ---------- */
 .quiz {
   position: absolute;
-  top: 66px;
+  top: calc(66px + var(--safe-t));
   left: 50%;
   transform: translateX(-50%);
   width: min(460px, calc(100% - 24px));
@@ -825,7 +826,7 @@ a {
 
 @media (max-width: 560px) {
   .top {
-    top: 8px;
+    top: calc(8px + var(--safe-t));
     left: 8px;
     right: 8px;
     gap: 6px;
@@ -869,7 +870,7 @@ a {
 
   .caption,
   .quiz {
-    top: 58px;
+    top: calc(58px + var(--safe-t));
   }
 
   .caption p {
