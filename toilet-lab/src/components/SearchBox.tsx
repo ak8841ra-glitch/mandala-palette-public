@@ -1,15 +1,15 @@
 import { useId, useMemo, useRef, useState } from 'react'
-import type { PartId } from '../data/parts'
+import type { Part, PartId } from '../stages/types'
 import { searchParts } from '../search'
 import { Icon } from './Icon'
 
-export function SearchBox({ onChoose }: { onChoose: (id: PartId) => void }) {
+export function SearchBox({ parts, example, onChoose }: { parts: Part[]; example: string; onChoose: (id: PartId) => void }) {
   const [q, setQ] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
   const listId = useId()
-  const hits = useMemo(() => searchParts(q), [q])
+  const hits = useMemo(() => searchParts(parts, q), [parts, q])
 
   const pick = (id: PartId) => {
     onChoose(id)
@@ -24,7 +24,7 @@ export function SearchBox({ onChoose }: { onChoose: (id: PartId) => void }) {
       <input
         ref={input}
         value={q}
-        placeholder="部品をさがす（例：水を止める）"
+        placeholder={`部品をさがす（例：${example}）`}
         aria-label="部品の名前や言い換えでさがす"
         role="combobox"
         aria-expanded={open && hits.length > 0}

@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
-import type { PartId } from '../data/parts'
+import type { StageModel } from '../types'
+import { v, mat, curve, polyCurve, boxMinMax, cyl, rod, tube, createRegistry } from '../../three/kit'
+import { flowState } from './flow'
 
 // 座標系：1単位 ≒ 10cm。床の上面が y=0、壁の表面が z=0、便器の前は +z、右は +x。
 // すべて基本形状（箱・円柱・回転体・押し出し・管）の組み合わせで作る。
@@ -23,130 +25,10 @@ export const COLORS = {
   ghost: 0xc9d4dc,
 }
 
-export type FlowPaths = {
-  supply: THREE.Curve<THREE.Vector3>
-  fill: THREE.Curve<THREE.Vector3>
-  refill: THREE.Curve<THREE.Vector3>
-  flushL: THREE.Curve<THREE.Vector3>
-  flushR: THREE.Curve<THREE.Vector3>
-  drain: THREE.Curve<THREE.Vector3>
-}
-
-export type ToiletModel = {
-  root: THREE.Group
-  partMeshes: Map<PartId, THREE.Mesh[]>
-  pickables: THREE.Mesh[]
-  shells: THREE.Mesh[]
-  cutPanels: THREE.Object3D[]
-  cutFrames: THREE.Object3D[]
-  anchors: Record<PartId, THREE.Vector3>
-  views: Partial<Record<PartId, THREE.Vector3>>
-  paths: FlowPaths
-  anim: {
-    lever: THREE.Group
-    flapper: THREE.Group
-    float: THREE.Group
-    floatAxis: THREE.Vector3
-    tankWater: THREE.Mesh
-    sealDisc: THREE.Mesh
-    tankLid: THREE.Group
-    chainLinks: THREE.Mesh[]
-    chainTop: THREE.Object3D
-    chainBottom: THREE.Object3D
-  }
-  constants: { waterLevel: number; tankBottom: number; sealLevel: number; floatPivotY: number; floatReach: number }
-}
-
-const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z)
-
-function mat(color: number, opts: Partial<THREE.MeshStandardMaterialParameters> = {}) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.05, ...opts })
-}
-
-function curve(points: THREE.Vector3[], tension = 0.2) {
-  return new THREE.CatmullRomCurve3(points, false, 'catmullrom', tension)
-}
-
-// 角をはっきりさせたい配管用：折れ線の角を少しだけ丸めた曲線
-function polyCurve(points: THREE.Vector3[], round = 0.18) {
-  const path = new THREE.CurvePath<THREE.Vector3>()
-  let prev = points[0].clone()
-  for (let i = 1; i < points.length; i++) {
-    const p = points[i]
-    if (i < points.length - 1) {
-      const next = points[i + 1]
-      const a = p.clone().add(prev.clone().sub(p).setLength(Math.min(round, prev.distanceTo(p) / 2)))
-      const b = p.clone().add(next.clone().sub(p).setLength(Math.min(round, next.distanceTo(p) / 2)))
-      path.add(new THREE.LineCurve3(prev, a))
-      path.add(new THREE.QuadraticBezierCurve3(a, p.clone(), b))
-      prev = b
-    } else {
-      path.add(new THREE.LineCurve3(prev, p.clone()))
-    }
-  }
-  return path
-}
-
-function box(w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m)
-  mesh.position.set(x, y, z)
-  return mesh
-}
-
-// min/max から箱を作る
-function boxMinMax(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, m: THREE.Material) {
-  return box(x1 - x0, y1 - y0, z1 - z0, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, m)
-}
-
-function cyl(r: number, h: number, m: THREE.Material, seg = 24) {
-  return new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), m)
-}
-
-// 2点間に円柱を置く
-function rod(a: THREE.Vector3, b: THREE.Vector3, r: number, m: THREE.Material) {
-  const len = a.distanceTo(b)
-  const mesh = cyl(r, len, m, 12)
-  mesh.position.copy(a).add(b).multiplyScalar(0.5)
-  mesh.quaternion.setFromUnitVectors(v(0, 1, 0), b.clone().sub(a).normalize())
-  return mesh
-}
-
-function tube(c: THREE.Curve<THREE.Vector3>, r: number, m: THREE.Material, seg = 64) {
-  return new THREE.Mesh(new THREE.TubeGeometry(c, seg, r, 14, false), m)
-}
-
-export function buildToilet(): ToiletModel {
+export function buildToilet(): StageModel {
   const root = new THREE.Group()
-  const partMeshes = new Map<PartId, THREE.Mesh[]>()
-  const pickables: THREE.Mesh[] = []
-  const shells: THREE.Mesh[] = []
-  const cutPanels: THREE.Object3D[] = []
-  const cutFrames: THREE.Object3D[] = []
-
-  // 部品として登録する
-  const reg = (id: PartId, mesh: THREE.Mesh, opt: { shell?: boolean; parent?: THREE.Object3D } = {}) => {
-    mesh.userData.partId = id
-    mesh.castShadow = true
-    mesh.receiveShadow = true
-    if (!partMeshes.has(id)) partMeshes.set(id, [])
-    partMeshes.get(id)!.push(mesh)
-    pickables.push(mesh)
-    if (opt.shell) {
-      mesh.userData.shell = true
-      shells.push(mesh)
-    }
-    ;(opt.parent ?? root).add(mesh)
-    return mesh
-  }
-  // 細い部品を選びやすくする、見えない太めの当たり判定
-  const proxy = (id: PartId, mesh: THREE.Mesh, parent: THREE.Object3D = root) => {
-    mesh.visible = false
-    mesh.userData.partId = id
-    mesh.userData.proxy = true
-    pickables.push(mesh)
-    parent.add(mesh)
-  }
-  const hitMat = new THREE.MeshBasicMaterial()
+  const R = createRegistry(root)
+  const { partMeshes, pickables, shells, cutPanels, cutFrames, hitMat, reg, proxy } = R
 
   // ---------- 壁と床（内部表示で一部を切り取る） ----------
   const wallM = mat(COLORS.wall, { roughness: 0.9 })
@@ -600,7 +482,7 @@ export function buildToilet(): ToiletModel {
     )
   const drainPath = polyCurve([...trapCurve.getPoints(30), v(0, -1.25, 2.0), v(0, -1.45, -2.2)], 0.4)
 
-  const anchors: Record<PartId, THREE.Vector3> = {
+  const anchors: Record<string, THREE.Vector3> = {
     bowl: v(1.45, 2.9, 4.6),
     seat: v(-1.6, 3.95, 5.1),
     lid: v(0, 7.2, 2.15),
@@ -624,7 +506,7 @@ export function buildToilet(): ToiletModel {
   }
 
   // 部品へズームするときの見る方向（指定がなければ今の向き）
-  const views: Partial<Record<PartId, THREE.Vector3>> = {
+  const views: Record<string, THREE.Vector3> = {
     stopValve: v(-0.9, 0.35, 1),
     supplyPipe: v(-0.6, 0.25, 1),
     supplyHose: v(-1, 0.4, 0.8),
@@ -644,6 +526,41 @@ export function buildToilet(): ToiletModel {
     lid: v(0.3, 0.2, 1),
   }
 
+  // ---------- 動き ----------
+  const constants = { waterLevel: WATER_LEVEL, tankBottom, sealLevel: SEAL }
+  const applyFlow = (t: number) => {
+    const st = flowState(t, constants)
+    lever.rotation.z = st.lever
+    flapper.rotation.x = -st.flapper
+    tankWater.scale.y = Math.max(0.02, st.tankLevel - tankBottom)
+    sealDisc.position.y = st.seal
+    // 浮き球は水面に浮かぶ（アームの可動範囲内で）
+    const rel = THREE.MathUtils.clamp((st.tankLevel - FLOAT_PIVOT.y) / FLOAT_REACH, -0.8, 0.2)
+    floatG.quaternion.setFromAxisAngle(floatAxis, Math.max(Math.asin(rel), -0.85))
+  }
+
+  // 鎖：両端の位置から毎フレーム並べ直す
+  const chainEnd = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3())
+  root.updateMatrixWorld(true)
+  const chainLength = chainEnd(chainTop).distanceTo(chainEnd(chainBottom)) + 0.35
+  const up = v(0, 1, 0)
+  const twist = new THREE.Quaternion().setFromAxisAngle(up, Math.PI / 2)
+  const update = () => {
+    root.updateMatrixWorld(true)
+    const a = chainEnd(chainTop)
+    const b = chainEnd(chainBottom)
+    const d = a.distanceTo(b)
+    const sag = Math.sqrt(Math.max(0, chainLength * chainLength - d * d)) * 0.5
+    const mid = a.clone().add(b).multiplyScalar(0.5).add(v(0, 0, sag))
+    const bez = new THREE.QuadraticBezierCurve3(a, mid, b)
+    chainLinks.forEach((l, i) => {
+      const u = (i + 0.5) / chainLinks.length
+      l.position.copy(bez.getPoint(u))
+      l.quaternion.setFromUnitVectors(up, bez.getTangent(u).normalize())
+      if (i % 2) l.quaternion.multiply(twist)
+    })
+  }
+
   return {
     root,
     partMeshes,
@@ -661,24 +578,8 @@ export function buildToilet(): ToiletModel {
       flushR: flush(1),
       drain: drainPath,
     },
-    anim: {
-      lever,
-      flapper,
-      float: floatG,
-      floatAxis,
-      tankWater,
-      sealDisc,
-      tankLid,
-      chainLinks,
-      chainTop,
-      chainBottom,
-    },
-    constants: {
-      waterLevel: WATER_LEVEL,
-      tankBottom,
-      sealLevel: SEAL,
-      floatPivotY: FLOAT_PIVOT.y,
-      floatReach: FLOAT_REACH,
-    },
+    lifts: [{ id: 'tankLid', group: tankLid, offset: v(0, 1.3, 0) }],
+    applyFlow,
+    update,
   }
 }

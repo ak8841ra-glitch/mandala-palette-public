@@ -1,11 +1,10 @@
-import type { PartId } from '../data/parts'
-import type { FlowPaths } from './buildModel'
+import type { FlowStep, FlowStream } from '../types'
 
 // 「水を流す」アニメーションの台本。流体シミュレーションではなく、時間で動きを決めている。
 
 export const FLOW_DURATION = 13.5
 
-export const FLOW_STEPS: { at: number; text: string; focus: PartId[] }[] = [
+export const FLOW_STEPS: FlowStep[] = [
   {
     at: 0,
     text: '洗浄レバーを回すと、タンクの中の鎖がフロートバルブを引き上げます。',
@@ -41,15 +40,7 @@ export const FLOW_STEPS: { at: number; text: string; focus: PartId[] }[] = [
 export const CLEAN = 0x1f8ef1
 export const USED = 0x9a7a4c
 
-export const FLOW_STREAMS: {
-  key: string
-  path: keyof FlowPaths
-  start: number
-  end: number
-  speed: number
-  spacing: number
-  color: number
-}[] = [
+export const FLOW_STREAMS: FlowStream[] = [
   { key: 'flushL', path: 'flushL', start: 0.6, end: 4.6, speed: 3.2, spacing: 0.42, color: CLEAN },
   { key: 'flushR', path: 'flushR', start: 0.6, end: 4.6, speed: 3.2, spacing: 0.42, color: CLEAN },
   { key: 'drain', path: 'drain', start: 1.5, end: 6.0, speed: 2.6, spacing: 0.42, color: USED },

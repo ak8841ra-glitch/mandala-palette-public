@@ -1,7 +1,7 @@
-import type { PartId } from './parts'
+import type { LostPart, QuizQuestion, Source } from '../types'
 
 // 参考にした公開資料（部品の名称・役割・つながりの確認に使用）
-export const SOURCES: { title: string; url: string; note: string }[] = [
+export const SOURCES: Source[] = [
   {
     title: 'TOTO「トイレのしくみ」',
     url: 'https://jp.toto.com/support/tips/toilet/kaiteki/shikumi/',
@@ -54,8 +54,6 @@ export const SIMPLIFICATIONS: string[] = [
   '温水洗浄便座・タンクレストイレの内部構造は対象外です。',
 ]
 
-export type QuizQuestion = { target: PartId; prompt: string; hint: string }
-
 export const QUIZ: QuizQuestion[] = [
   {
     target: 'stopValve',
@@ -71,5 +69,34 @@ export const QUIZ: QuizQuestion[] = [
     target: 'floatValve',
     prompt: 'フロートバルブ（タンクの栓）を見つけてタップしよう',
     hint: 'タンクの中の底にあるよ。鎖の下の先をたどってみよう。',
+  },
+]
+
+// 「迷子パーツをもどそう」で迷子になる候補
+export const TOILET_LOST: LostPart[] = [
+  {
+    id: 'floatBall',
+    line: 'ぼく、浮き球。水に浮かんで、水の高さをボールタップに知らせるのが仕事なんだ。',
+    hints: ['タンクの中の、水面のあたりにいたよ。', 'ボールタップから横にのびている腕の先が、ぼくの席！'],
+  },
+  {
+    id: 'floatValve',
+    line: 'わたし、フロートバルブ。タンクの底の穴にふたをして、水をためておく係なの。',
+    hints: ['タンクの中の、いちばん底にいたよ。', '鎖の下のはしをたどってみて。そこがわたしの席。'],
+  },
+  {
+    id: 'lever',
+    line: 'おれ、洗浄レバー。回されると、タンクの中の鎖を引っぱって水を流すんだ。',
+    hints: ['タンクの外側の、正面の上のほうにいたよ。', '鎖の上のはしの近く。タンクの左前の角あたり！'],
+  },
+  {
+    id: 'stopValve',
+    line: 'ぼく、止水栓。トイレに行く水を止めたり、勢いを調整したりするよ。',
+    hints: ['壁から出ている、低いところにいたよ。', '給水ホースの下のはしをたどってみて。'],
+  },
+  {
+    id: 'refillTube',
+    line: 'ぼく、補助水管。細い体で、流したあとの便器に水を少し届けるんだ。',
+    hints: ['タンクの中の、上のほうにいたよ。', 'ボールタップの頭と、オーバーフロー管の口をつなぐ場所！'],
   },
 ]

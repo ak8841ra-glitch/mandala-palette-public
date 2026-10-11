@@ -1,17 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { PART_MAP, type PartId } from './data/parts'
-import { QUIZ } from './data/info'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { Part, PartId, Stage as StageDef } from './stages/types'
+import { pickLost, stageByKey } from './stages'
 import { Viewer, type LostEvent } from './three/Viewer'
-import { pickLost } from './data/game'
-import { GameCard, StageSelect, type Game } from './components/Game'
-import { FLOW_STEPS } from './three/flow'
 import { SearchBox } from './components/SearchBox'
 import { InfoPanel } from './components/InfoPanel'
 import { RefsModal } from './components/RefsModal'
 import { Fallback } from './components/Fallback'
 import { Icon } from './components/Icon'
+import { GameCard, StageSelect, type Game } from './components/Game'
 
 type Quiz = { index: number; status: 'ask' | 'wrong' | 'right' | 'done'; picked?: PartId }
+type Pending = 'lost' | 'quiz' | null
 
 function webglAvailable() {
   if (new URLSearchParams(location.search).has('nowebgl')) return false
@@ -22,6 +21,8 @@ function webglAvailable() {
     return false
   }
 }
+
+const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`
 
 export default function App() {
   const [gl] = useState(webglAvailable)
@@ -36,6 +37,9 @@ function Stage({ onFail }: { onFail: () => void }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
   const viewer = useRef<Viewer | null>(null)
+  const [stageKey, setStageKey] = useState('toilet')
+  const stage = stageByKey(stageKey)
+  const parts = useMemo(() => Object.fromEntries(stage.parts.map((p) => [p.id, p])) as Record<PartId, Part>, [stage])
   const [selected, setSelected] = useState<PartId | null>(null)
   const [inside, setInside] = useState(false)
   const [step, setStep] = useState<number | null>(null)
@@ -48,6 +52,26 @@ function Stage({ onFail }: { onFail: () => void }) {
   quizRef.current = quiz
   const gameRef = useRef<Game | null>(null)
   gameRef.current = game
+  const stageRef = useRef<StageDef>(stage)
+  stageRef.current = stage
+  // ステージを切り替えたあと、新しい模型ができてから始めること
+  const pending = useRef<Pending>(null)
+
+  const handlePick = useCallback((id: PartId | null) => {
+    const v = viewer.current
+    const q = quizRef.current
+    if (q && (q.status === 'ask' || q.status === 'wrong')) {
+      if (!id) return
+      const target = stageRef.current.quiz[q.index].target
+      v?.select(id)
+      setSelected(id)
+      setQuiz({ ...q, status: id === target ? 'right' : 'wrong', picked: id })
+      return
+    }
+    if (q || gameRef.current) return
+    v?.select(id)
+    setSelected(id)
+  }, [])
 
   // 迷子パーツの進みぐあい（3D側からの知らせ）
   const handleLost = useCallback((e: LostEvent) => {
@@ -58,7 +82,7 @@ function Stage({ onFail }: { onFail: () => void }) {
     else if (e.type === 'returning') setGame({ ...g, status: 'returning' })
     else if (e.type === 'placed') {
       setGame({ ...g, status: 'flushing' })
-      // 戻れたら、ちゃんと働けるか水を流して見せる
+      // 戻れたら、ちゃんと働けるか動かして見せる
       setTimeout(() => viewer.current?.startFlush(), 500)
     }
   }, [])
@@ -71,26 +95,30 @@ function Stage({ onFail }: { onFail: () => void }) {
     }
   }, [])
 
-  const handlePick = useCallback((id: PartId | null) => {
-    const v = viewer.current
-    const q = quizRef.current
-    if (q && (q.status === 'ask' || q.status === 'wrong')) {
-      if (!id) return
-      const target = QUIZ[q.index].target
-      v?.select(id)
-      setSelected(id)
-      setQuiz({ ...q, status: id === target ? 'right' : 'wrong', picked: id })
-      return
-    }
-    if (q || gameRef.current) return
-    v?.select(id)
-    setSelected(id)
-  }, [])
+  const beginLost = (v: Viewer, st: StageDef, except?: PartId) => {
+    const lost = pickLost(st, except)
+    setQuiz(null)
+    setSelected(null)
+    setGame({ part: lost.id, status: 'find', misses: 0 })
+    v.startLost(lost.id)
+  }
+
+  const beginQuiz = (v: Viewer) => {
+    setGame(null)
+    setSelected(null)
+    v.endLost()
+    v.stopFlush()
+    v.select(null)
+    v.setInside(false)
+    v.resetView()
+    setQuiz({ index: 0, status: 'ask' })
+  }
 
   useEffect(() => {
     if (!hostRef.current || !labelRef.current) return
+    let v: Viewer
     try {
-      viewer.current = new Viewer(hostRef.current, labelRef.current, {
+      v = new Viewer(hostRef.current, labelRef.current, stage, {
         onSelect: handlePick,
         onFlushStep: setStep,
         onFlushDone: handleFlushDone,
@@ -101,12 +129,20 @@ function Stage({ onFail }: { onFail: () => void }) {
     } catch (e) {
       console.error(e)
       onFail()
+      return
     }
+    viewer.current = v
+    const p = pending.current
+    pending.current = null
+    if (p === 'lost') beginLost(v, stage)
+    else if (p === 'quiz') beginQuiz(v)
     return () => {
-      viewer.current?.dispose()
+      v.dispose()
       viewer.current = null
     }
-  }, [handlePick, handleLost, handleFlushDone, onFail])
+    // beginLost / beginQuiz は state の setter だけを使うので、ステージが変わったときだけ作り直す
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, handlePick, handleLost, handleFlushDone, onFail])
 
   useEffect(() => {
     const t = setTimeout(() => setHint(false), 7000)
@@ -139,13 +175,13 @@ function Stage({ onFail }: { onFail: () => void }) {
       ro.disconnect()
       window.removeEventListener('resize', update)
     }
-  }, [showPanel, showTopCard, selected, step, quiz, game])
+  }, [showPanel, showTopCard, selected, step, quiz, game, stage])
 
   useEffect(() => {
     const hideForQuiz = !!quiz && quiz.status !== 'done'
     const hideForGame = !!game && game.status !== 'cleared'
     viewer.current?.setLabelsVisible(!hideForQuiz && !hideForGame)
-  }, [quiz, game])
+  }, [quiz, game, stage])
 
   const choose = (id: PartId) => {
     if (playing) return
@@ -172,16 +208,24 @@ function Stage({ onFail }: { onFail: () => void }) {
     setHint(false)
   }
 
-  const startLost = () => {
-    const v = viewer.current
-    if (!v) return
-    const lost = pickLost(game?.part)
+  // 別のステージへ移る（模型を作り直す）。then はできあがったあとに始めること
+  const switchStage = (key: string, then: Pending = null) => {
     setStagesOpen(false)
-    setQuiz(null)
-    setSelected(null)
-    setGame({ part: lost.id, status: 'find', misses: 0 })
-    v.startLost(lost.id)
     setHint(false)
+    if (key === stageKey) {
+      const v = viewer.current
+      if (!v) return
+      if (then === 'lost') beginLost(v, stage, game?.part)
+      else if (then === 'quiz') beginQuiz(v)
+      return
+    }
+    pending.current = then
+    setSelected(null)
+    setGame(null)
+    setQuiz(null)
+    setStep(null)
+    setInside(false)
+    setStageKey(key)
   }
 
   const endGame = () => {
@@ -192,24 +236,11 @@ function Stage({ onFail }: { onFail: () => void }) {
     setGame(null)
   }
 
-  const startQuiz = () => {
-    const v = viewer.current
-    if (!v) return
-    if (game) endGame()
-    setStagesOpen(false)
-    if (step !== null) v.stopFlush()
-    close()
-    v.setInside(false)
-    v.resetView()
-    setQuiz({ index: 0, status: 'ask' })
-    setHint(false)
-  }
-
   const nextQuiz = () => {
     if (!quiz) return
     viewer.current?.select(null)
     setSelected(null)
-    if (quiz.index + 1 >= QUIZ.length) setQuiz({ index: quiz.index, status: 'done' })
+    if (quiz.index + 1 >= stage.quiz.length) setQuiz({ index: quiz.index, status: 'done' })
     else setQuiz({ index: quiz.index + 1, status: 'ask' })
   }
 
@@ -226,34 +257,36 @@ function Stage({ onFail }: { onFail: () => void }) {
       </div>
 
       <header className="top">
-        <div className="brand" data-label-block aria-label="トイレのしくみ 3D">
+        <button className="brand" data-label-block aria-label={`${stage.brand}（ステージを選ぶ）`} onClick={() => setStagesOpen(true)}>
           <span className="brand-mark" aria-hidden>
-            <Icon name="drop" />
+            <Icon name={stage.flow.actionIcon === 'snow' ? 'snow' : 'drop'} />
           </span>
           <span className="brand-text">
-            トイレのしくみ<small>3D模型</small>
+            {stage.brand}
+            <small>3D模型</small>
           </span>
-        </div>
-        {!playing && <SearchBox onChoose={choose} />}
+        </button>
+        {!playing && <SearchBox key={stage.key} parts={stage.parts} example={stage.searchExample} onChoose={choose} />}
       </header>
 
       {step !== null && !showGameCard && (
         <div className="caption" role="status" ref={cardRef} data-label-block>
           <div className="caption-step">
-            {FLOW_STEPS.map((_, i) => (
+            {stage.flow.steps.map((_, i) => (
               <i key={i} className={i <= step ? 'on' : ''} />
             ))}
           </div>
-          <p>{FLOW_STEPS[step].text}</p>
+          <p>{stage.flow.steps[step].text}</p>
           <div className="legend">
-            <span>
-              <b className="clean" />
-              きれいな水
-            </span>
-            <span>
-              <b className="used" />
-              流したあとの水
-            </span>
+            {stage.flow.legend.map((l) => (
+              <span key={l.label}>
+                <b
+                  className={l.kind === 'drop' ? 'drop' : ''}
+                  style={l.kind === 'drop' ? { background: hex(l.color) } : { borderBottomColor: hex(l.color) }}
+                />
+                {l.label}
+              </span>
+            ))}
           </div>
         </div>
       )}
@@ -261,8 +294,10 @@ function Stage({ onFail }: { onFail: () => void }) {
       {game && showGameCard && (
         <GameCard
           cardRef={cardRef}
+          stage={stage}
           game={game}
-          onAgain={startLost}
+          onAgain={() => switchStage(stage.key, 'lost')}
+          onNext={(key) => switchStage(key, 'lost')}
           onStages={() => {
             endGame()
             setStagesOpen(true)
@@ -270,10 +305,20 @@ function Stage({ onFail }: { onFail: () => void }) {
         />
       )}
 
-      {quiz && <QuizCard cardRef={cardRef} quiz={quiz} onNext={nextQuiz} onEnd={endQuiz} onRetry={() => setQuiz({ ...quiz, status: 'ask' })} />}
+      {quiz && (
+        <QuizCard
+          cardRef={cardRef}
+          stage={stage}
+          parts={parts}
+          quiz={quiz}
+          onNext={nextQuiz}
+          onEnd={endQuiz}
+          onRetry={() => setQuiz({ ...quiz, status: 'ask' })}
+        />
+      )}
 
-      {showPanel && selected && (
-        <InfoPanel ref={panelRef} id={selected} onClose={close} onJump={choose} />
+      {showPanel && selected && parts[selected] && (
+        <InfoPanel ref={panelRef} id={selected} parts={parts} onClose={close} onJump={choose} />
       )}
 
       {hint && (
@@ -293,8 +338,8 @@ function Stage({ onFail }: { onFail: () => void }) {
           <span>{inside ? '外側を見る' : '内部を見る'}</span>
         </button>
         <button className={`primary ${step !== null ? 'active' : ''}`} onClick={flush} disabled={playing}>
-          <Icon name={step !== null ? 'stop' : 'flush'} />
-          <span>{step !== null ? '止める' : '水を流す'}</span>
+          <Icon name={step !== null ? 'stop' : stage.flow.actionIcon} />
+          <span>{step !== null ? '止める' : stage.flow.action}</span>
         </button>
         <button
           onClick={quiz ? endQuiz : game ? endGame : () => setStagesOpen(true)}
@@ -310,30 +355,43 @@ function Stage({ onFail }: { onFail: () => void }) {
         <button onClick={() => setRefsOpen(true)}>参考資料・省略点</button>
       </footer>
 
-      {refsOpen && <RefsModal onClose={() => setRefsOpen(false)} />}
-      {stagesOpen && <StageSelect onClose={() => setStagesOpen(false)} onLost={startLost} onQuiz={startQuiz} />}
+      {refsOpen && <RefsModal stage={stage} onClose={() => setRefsOpen(false)} />}
+      {stagesOpen && (
+        <StageSelect
+          current={stage.key}
+          onClose={() => setStagesOpen(false)}
+          onView={(key) => switchStage(key)}
+          onLost={(key) => switchStage(key, 'lost')}
+          onQuiz={(key) => switchStage(key, 'quiz')}
+        />
+      )}
     </div>
   )
 }
 
 function QuizCard({
   cardRef,
+  stage,
+  parts,
   quiz,
   onNext,
   onEnd,
   onRetry,
 }: {
   cardRef: React.RefObject<HTMLDivElement | null>
+  stage: StageDef
+  parts: Record<PartId, Part>
   quiz: Quiz
   onNext: () => void
   onEnd: () => void
   onRetry: () => void
 }) {
-  const q = QUIZ[quiz.index]
+  const total = stage.quiz.length
+  const q = stage.quiz[quiz.index]
   if (quiz.status === 'done')
     return (
       <div className="quiz" ref={cardRef} data-label-block>
-        <p className="quiz-q">3問ぜんぶ見つけられました！</p>
+        <p className="quiz-q">{total}問ぜんぶ見つけられました！</p>
         <p className="quiz-a">ほかの部品もタップして、つながりをたどってみましょう。</p>
         <div className="quiz-actions">
           <button className="primary" onClick={onEnd}>
@@ -345,17 +403,17 @@ function QuizCard({
   return (
     <div className="quiz" role="status" ref={cardRef} data-label-block>
       <p className="quiz-count">
-        部品クイズ {quiz.index + 1} / {QUIZ.length}
+        部品クイズ（{stage.name}） {quiz.index + 1} / {total}
       </p>
       <p className="quiz-q">{q.prompt}</p>
       {quiz.status === 'right' && (
         <>
           <p className="quiz-a ok">
-            <b>正解！</b> {PART_MAP[q.target].role}
+            <b>正解！</b> {parts[q.target].role}
           </p>
           <div className="quiz-actions">
             <button className="primary" onClick={onNext}>
-              {quiz.index + 1 >= QUIZ.length ? '結果を見る' : '次の問題'}
+              {quiz.index + 1 >= total ? '結果を見る' : '次の問題'}
             </button>
           </div>
         </>
@@ -363,7 +421,7 @@ function QuizCard({
       {quiz.status === 'wrong' && quiz.picked && (
         <>
           <p className="quiz-a">
-            それは「{PART_MAP[quiz.picked].name}」。<br />
+            それは「{parts[quiz.picked].name}」。<br />
             ヒント：{q.hint}
           </p>
           <div className="quiz-actions">

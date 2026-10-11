@@ -1,8 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { PART_MAP, PARTS, type PartId } from '../data/parts'
-import { buildToilet, type ToiletModel } from './buildModel'
-import { FLOW_DURATION, FLOW_STEPS, FLOW_STREAMS, flowState } from './flow'
+import type { Part, PartId, Stage, StageModel } from '../stages/types'
 
 export type LostEvent = { type: 'grab' } | { type: 'wrong'; near: PartId | null } | { type: 'returning' } | { type: 'placed' }
 
@@ -50,10 +48,6 @@ type Label = {
 
 const ACCENT = new THREE.Color(0xf08a24)
 const FOCUS = new THREE.Color(0x2bb3a3)
-const GHOST_IDS = new Set<PartId>(['bowl', 'tank', 'lid', 'seat'])
-const HOME_TARGET = new THREE.Vector3(-0.5, 3.7, 2.4)
-const HOME_DIR = new THREE.Vector3(-0.62, 0.36, 1).normalize()
-const FLOW_DIR = new THREE.Vector3(-0.85, 0.36, 0.9).normalize()
 
 // 不透明⇔半透明を切り替えるときはシェーダーの作り直しが必要（OPAQUE の定義が変わるため）
 function setTransparent(mat: THREE.Material, on: boolean) {
@@ -62,9 +56,6 @@ function setTransparent(mat: THREE.Material, on: boolean) {
   mat.needsUpdate = true
 }
 
-// 水を流している間、中の矢印が見えるよう半透明にする配管
-const GLASS_IDS: PartId[] = ['trap', 'drainPipe', 'floorFlange', 'supplyPipe', 'supplyHose', 'overflow', 'ballTap', 'tankGasket', 'stopValve']
-
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 
 export class Viewer {
@@ -72,7 +63,13 @@ export class Viewer {
   private scene = new THREE.Scene()
   private camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200)
   private controls: OrbitControls
-  private model: ToiletModel
+  private model: StageModel
+  private stage: Stage
+  private parts: Record<PartId, Part>
+  private ghostIds: Set<PartId>
+  private homeTarget: THREE.Vector3
+  private homeDir: THREE.Vector3
+  private liftBase: THREE.Vector3[] = []
   private raycaster = new THREE.Raycaster()
   private timer = new THREE.Timer()
   private raf = 0
@@ -95,7 +92,6 @@ export class Viewer {
   private inset = { right: 0, bottom: 0, top: 0 }
   private baseFov = 38
   private frame = 0
-  private chainLength = 0
   private streams: { mesh: THREE.InstancedMesh; curve: THREE.Curve<THREE.Vector3>; len: number; key: string }[] = []
   private resizeObs: ResizeObserver
   private down: { x: number; y: number; t: number } | null = null
@@ -108,10 +104,15 @@ export class Viewer {
   private clockT = 0
   private homeOnInsets = false
 
-  constructor(host: HTMLElement, labelLayer: HTMLElement, cb: Callbacks) {
+  constructor(host: HTMLElement, labelLayer: HTMLElement, stage: Stage, cb: Callbacks) {
     this.host = host
     this.labelLayer = labelLayer
     this.cb = cb
+    this.stage = stage
+    this.parts = Object.fromEntries(stage.parts.map((p) => [p.id, p]))
+    this.ghostIds = new Set(stage.ghost.ids)
+    this.homeTarget = new THREE.Vector3(...stage.camera.home.target)
+    this.homeDir = new THREE.Vector3(...stage.camera.home.dir).normalize()
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
@@ -126,10 +127,12 @@ export class Viewer {
     sun.position.set(6, 14, 10)
     sun.castShadow = true
     sun.shadow.mapSize.set(1024, 1024)
-    sun.shadow.camera.left = -8
-    sun.shadow.camera.right = 8
-    sun.shadow.camera.top = 10
-    sun.shadow.camera.bottom = -4
+    const sh = stage.camera.shadow
+    sun.shadow.camera.left = sh.left
+    sun.shadow.camera.right = sh.right
+    sun.shadow.camera.top = sh.top
+    sun.shadow.camera.bottom = sh.bottom
+    sun.shadow.camera.far = 80
     sun.shadow.bias = -0.0008
     sun.shadow.normalBias = 0.02
     this.scene.add(sun)
@@ -137,16 +140,17 @@ export class Viewer {
     fill.position.set(-8, 6, 6)
     this.scene.add(fill)
 
-    this.model = buildToilet()
+    this.model = stage.build()
     this.scene.add(this.model.root)
+    this.liftBase = this.model.lifts.map((l) => l.group.position.clone())
     this.buildStreams()
-    this.chainLength = this.chainEnds().a.distanceTo(this.chainEnds().b) + 0.35
+    this.model.applyFlow(stage.flow.duration, false)
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.enableDamping = true
     this.controls.dampingFactor = 0.09
     this.controls.minDistance = 2.2
-    this.controls.maxDistance = 34
+    this.controls.maxDistance = 34 * (stage.camera.home.halfH / 5.4)
     this.controls.maxPolarAngle = Math.PI * 0.62
     this.controls.screenSpacePanning = true
     this.controls.addEventListener('start', () => {
@@ -166,8 +170,8 @@ export class Viewer {
     this.resizeObs = new ResizeObserver(() => this.resize())
     this.resizeObs.observe(host)
     this.resize()
-    this.camera.position.copy(this.homePosition(HOME_TARGET, HOME_DIR))
-    this.controls.target.copy(HOME_TARGET)
+    this.camera.position.copy(this.homePosition(this.homeTarget, this.homeDir))
+    this.controls.target.copy(this.homeTarget)
     this.controls.update()
     this.applySelection()
     this.loop()
@@ -208,7 +212,7 @@ export class Viewer {
   select(id: PartId | null, opts: { fly?: boolean } = {}) {
     this.selected = id
     this.applySelection()
-    if (id && PART_MAP[id].inside && !this.inside) this.setInside(true)
+    if (id && this.parts[id]?.inside && !this.inside) this.setInside(true)
     if (id && opts.fly) this.flyTo(id)
   }
 
@@ -219,7 +223,7 @@ export class Viewer {
   }
 
   resetView() {
-    this.flyToPose(HOME_TARGET, this.homePosition(HOME_TARGET, HOME_DIR), 1.0)
+    this.flyToPose(this.homeTarget, this.homePosition(this.homeTarget, this.homeDir), 1.0)
   }
 
   setLabelsVisible(on: boolean) {
@@ -238,14 +242,15 @@ export class Viewer {
   startFlush() {
     this.flushT = 0
     this.setInside(true)
-    const target = new THREE.Vector3(-0.4, 3.2, 2.0)
-    this.flyToPose(target, this.homePosition(target, FLOW_DIR, 1.18), 1.1)
+    const f = this.stage.camera.flow
+    const target = new THREE.Vector3(...f.target)
+    this.flyToPose(target, this.homePosition(target, new THREE.Vector3(...f.dir).normalize(), f.scale), 1.1)
   }
 
   stopFlush() {
     if (this.flushT === null) return
     this.flushT = null
-    this.applyFlow(FLOW_DURATION)
+    this.applyFlow(this.stage.flow.duration)
     this.setFlushStep(null)
     this.cb.onFlushDone()
   }
@@ -287,7 +292,7 @@ export class Viewer {
     })
     const tag = document.createElement('div')
     tag.className = 'lost-tag'
-    tag.textContent = `${PART_MAP[id].name}（迷子）`
+    tag.textContent = `${this.parts[id].name}（迷子）`
     this.labelLayer.appendChild(tag)
     this.lost = {
       id,
@@ -377,7 +382,8 @@ export class Viewer {
     const near = Math.min(...l.homePoints.map((p) => ray.distanceToPoint(p)))
     const picked = this.pick(cx, cy, l.id)
     // 元の場所の近く、または元の場所に残した当たり判定（見えない）を押したら正解
-    const ok = near < 0.6 || picked === l.id
+    const tol = 0.6 * (this.stage.camera.home.halfH / 5.4)
+    const ok = near < tol || picked === l.id
     if (ok) {
       l.phase = 'returning'
       l.from = l.carrier.position.clone()
@@ -393,6 +399,11 @@ export class Viewer {
       }
       this.cb.onLost({ type: 'wrong', near: picked })
     }
+  }
+
+  private lostScale(l: Lost) {
+    const fit = 2.2 * (this.stage.camera.home.halfH / 5.4)
+    return Math.min(1, fit / Math.max(0.01, l.radius))
   }
 
   // 迷子の子が待つ場所：模型を回しても画面の右下あたりに見えるよう、カメラから決める
@@ -415,11 +426,15 @@ export class Viewer {
       c.position.lerpVectors(l.from, to, k)
       c.position.y += Math.sin(k * Math.PI) * 1.2
       c.rotation.z *= 1 - k
+      // 長い部品（ホースなど）は、待っている間だけ小さくする
+      const s = l.phase === 'leaving' ? THREE.MathUtils.lerp(c.scale.x, this.lostScale(l), k) : THREE.MathUtils.lerp(c.scale.x, 1, k)
+      c.scale.setScalar(s)
       if (l.t >= l.dur) {
         if (l.phase === 'leaving') l.phase = 'away'
         else {
           c.position.copy(l.home)
           c.rotation.set(0, 0, 0)
+          c.scale.setScalar(1)
           const id = l.id
           this.endLost()
           this.selected = id
@@ -436,7 +451,7 @@ export class Viewer {
     }
     // 名札
     const v = c.getWorldPosition(new THREE.Vector3())
-    v.y += Math.max(0.6, l.radius * 0.6)
+    v.y += Math.max(0.6, l.radius * 0.6 * c.scale.x)
     v.project(this.camera)
     const x = (v.x * 0.5 + 0.5) * this.width
     const y = (-v.y * 0.5 + 0.5) * this.height
@@ -457,8 +472,7 @@ export class Viewer {
     const vfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(this.baseFov) / 2) * (visibleH / this.height))
     const aspect = this.width / visibleH
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
-    const halfH = 5.4
-    const halfW = 3.9
+    const { halfH, halfW } = this.stage.camera.home
     const d = Math.max(halfH / Math.tan(vfov / 2), halfW / Math.tan(hfov / 2)) * scale + 1.5
     return target.clone().add(dir.clone().multiplyScalar(d))
   }
@@ -470,7 +484,8 @@ export class Viewer {
     const center = box.getCenter(new THREE.Vector3())
     const radius = box.getSize(new THREE.Vector3()).length() / 2
     const aspect = this.width / Math.max(1, this.height)
-    const dist = THREE.MathUtils.clamp(radius * 2.6 + 3.2, 4.4, 14) * (aspect < 0.8 ? 1.6 : 1)
+    const z = this.stage.camera.zoom
+    const dist = THREE.MathUtils.clamp(radius * 2.6 + 3.2, z.min, z.max) * (aspect < 0.8 ? 1.6 : 1)
     const dir = (this.model.views[id]?.clone() ?? this.camera.position.clone().sub(this.controls.target)).normalize()
     this.flyToPose(center, center.clone().add(dir.multiplyScalar(dist)), 1.0)
   }
@@ -539,7 +554,7 @@ export class Viewer {
 
   private applyGlass() {
     const k = this.glassAmt
-    for (const id of GLASS_IDS) {
+    for (const id of this.stage.glassIds) {
       for (const m of this.model.partMeshes.get(id) ?? []) {
         const mat = m.material as THREE.MeshStandardMaterial
         const op = 1 - 0.62 * k
@@ -552,29 +567,32 @@ export class Viewer {
 
   private applyMode() {
     const k = this.insideAmt
-    const { shells, cutPanels, cutFrames, anim } = this.model
+    const { shells, cutPanels, cutFrames, lifts } = this.model
     for (const m of shells) {
       const mat = m.material as THREE.MeshStandardMaterial
       const id = m.userData.partId as PartId
       const sel = id === this.selected || this.focusSet.has(id)
-      // ふたは模型の手前に立っているので、内部表示ではほぼ消す
-      const target = sel ? 0.42 : id === 'lid' ? 0.06 : id === 'seat' ? 0.22 : 0.12
+      const target = sel ? 0.42 : (this.stage.ghost.opacity[id] ?? 0.12)
       const op = 1 - (1 - target) * k
       setTransparent(mat, op < 0.999)
       mat.opacity = op
       mat.depthWrite = op > 0.6
       m.castShadow = op > 0.6
     }
-    anim.tankLid.position.y = 1.3 * easeInOut(k)
-    anim.tankLid.position.z = -0.0
-    for (const m of this.model.partMeshes.get('tankLid') ?? []) {
-      const mat = m.material as THREE.MeshStandardMaterial
-      const op = 1 - 0.78 * k
-      setTransparent(mat, op < 0.999)
-      mat.opacity = op
-      mat.depthWrite = op > 0.6
-      m.castShadow = op > 0.6
-    }
+    // タンクのふた・前面パネルなどは、持ち上げて薄くする
+    const e = easeInOut(k)
+    lifts.forEach((l, i) => {
+      l.group.position.copy(this.liftBase[i]).addScaledVector(l.offset, e)
+      if (l.rotate) l.group.rotation.set(l.rotate.x * e, l.rotate.y * e, l.rotate.z * e)
+      for (const m of this.model.partMeshes.get(l.id) ?? []) {
+        const mat = m.material as THREE.MeshStandardMaterial
+        const op = 1 - 0.78 * k
+        setTransparent(mat, op < 0.999)
+        mat.opacity = op
+        mat.depthWrite = op > 0.6
+        m.castShadow = op > 0.6
+      }
+    })
     for (const p of cutPanels) p.visible = k < 0.5
     for (const f of cutFrames) f.visible = k >= 0.5
   }
@@ -610,18 +628,19 @@ export class Viewer {
     const usable = hits.filter((h) => {
       const id = h.object.userData.partId as PartId
       if (ignoreMoved && id === ignoreMoved && !h.object.userData.proxy) return false
-      return this.inside || !PART_MAP[id].inside
+      return this.inside || !this.parts[id]?.inside
     })
     if (!usable.length) return null
     if (this.inside) {
       // 内部表示では半透明の外側（便器・タンク・ふた）より中の部品を優先する
+      const liftIds = this.model.lifts.map((l) => l.id)
       const inner = usable.find((h) => {
         const id = h.object.userData.partId as PartId
-        return !GHOST_IDS.has(id) && id !== 'tankLid'
+        return !this.ghostIds.has(id) && !liftIds.includes(id)
       })
       if (inner) return inner.object.userData.partId
-      // ほぼ見えない便ふたは最後に回す
-      const shell = usable.find((h) => h.object.userData.partId !== 'lid')
+      // ほぼ見えないもの（便ふたなど）は最後に回す
+      const shell = usable.find((h) => !this.stage.ghost.pickLast.includes(h.object.userData.partId))
       if (shell) return shell.object.userData.partId
     }
     return usable[0].object.userData.partId
@@ -631,7 +650,7 @@ export class Viewer {
 
   private buildLabels() {
     this.labelLayer.innerHTML = ''
-    for (const p of PARTS) {
+    for (const p of this.stage.parts) {
       const el = document.createElement('div')
       el.className = 'label'
       el.dataset.level = String(p.level)
@@ -662,7 +681,8 @@ export class Viewer {
 
   private anchorOf(id: PartId, out: THREE.Vector3) {
     out.copy(this.model.anchors[id])
-    if (id === 'tankLid') out.y += this.model.anim.tankLid.position.y
+    const i = this.model.lifts.findIndex((l) => l.id === id)
+    if (i >= 0) out.add(this.model.lifts[i].group.position).sub(this.liftBase[i])
     return out
   }
 
@@ -701,18 +721,19 @@ export class Viewer {
 
   private updateLabels() {
     const camDist = this.camera.position.distanceTo(this.controls.target)
-    const maxLevel = camDist < 7.5 ? 3 : camDist < 13 ? 2 : 1
+    const [near, mid] = this.stage.camera.labelDist
+    const maxLevel = camDist < near ? 3 : camDist < mid ? 2 : 1
     const v = new THREE.Vector3()
     type Cand = { l: Label; x: number; y: number; pri: number }
     const cands: Cand[] = []
     for (const l of this.labels) {
-      const p = PART_MAP[l.id]
+      const p = this.parts[l.id]
       const isSel = l.id === this.selected
       const isFocus = this.focusSet.has(l.id)
       let show = this.labelsOn
       if (show && !isSel && !isFocus && p.level > maxLevel) show = false
       if (show && p.inside && this.insideAmt < 0.5) show = false
-      if (show && (l.id === 'tankLid' || l.id === 'lid') && this.insideAmt > 0.5 && !isSel) show = false
+      if (show && this.stage.ghost.hideLabelInside.includes(l.id) && this.insideAmt > 0.5 && !isSel) show = false
       if (show && l.occluded && !isSel && !isFocus) show = false
       if (show) {
         this.anchorOf(l.id, v).project(this.camera)
@@ -766,12 +787,14 @@ export class Viewer {
 
   private buildStreams() {
     const cone = new THREE.ConeGeometry(0.1, 0.3, 10)
-    for (const s of FLOW_STREAMS) {
+    const drop = new THREE.SphereGeometry(0.12, 12, 8)
+    drop.scale(1, 1.3, 1)
+    for (const s of this.stage.flow.streams) {
       const curve = this.model.paths[s.path]
       const len = curve.getLength()
       const count = Math.max(4, Math.ceil(len / s.spacing))
       const mesh = new THREE.InstancedMesh(
-        cone,
+        s.shape === 'drop' ? drop : cone,
         new THREE.MeshBasicMaterial({ color: s.color, transparent: true, opacity: 0.95, depthWrite: false }),
         count,
       )
@@ -786,30 +809,20 @@ export class Viewer {
   private setFlushStep(step: number | null) {
     if (step === this.flushStep) return
     this.flushStep = step
-    this.focusSet = new Set(step === null ? [] : FLOW_STEPS[step].focus)
+    this.focusSet = new Set(step === null ? [] : this.stage.flow.steps[step].focus)
     this.applySelection()
     this.cb.onFlushStep(step)
   }
 
   private applyFlow(t: number) {
-    const st = flowState(t, this.model.constants)
-    const { anim, constants } = this.model
-    anim.lever.rotation.z = st.lever
-    anim.flapper.rotation.x = -st.flapper
-    anim.tankWater.scale.y = Math.max(0.02, st.tankLevel - constants.tankBottom)
-    anim.sealDisc.position.y = st.seal
-    // 浮き球は水面に浮かぶ（アームの可動範囲内で）
-    const rel = THREE.MathUtils.clamp((st.tankLevel - constants.floatPivotY) / constants.floatReach, -0.8, 0.2)
-    const ang = Math.max(Math.asin(rel), -0.85)
-    anim.float.quaternion.setFromAxisAngle(anim.floatAxis, ang)
-
+    this.model.applyFlow(t, this.flushT !== null)
     const m = new THREE.Matrix4()
     const q = new THREE.Quaternion()
     const up = new THREE.Vector3(0, 1, 0)
     const sc = new THREE.Vector3()
     for (let i = 0; i < this.streams.length; i++) {
       const s = this.streams[i]
-      const def = FLOW_STREAMS[i]
+      const def = this.stage.flow.streams[i]
       const active = this.flushT !== null && t >= def.start && t <= def.end + s.len / def.speed
       if (!active) {
         s.mesh.count = 0
@@ -834,31 +847,6 @@ export class Viewer {
       s.mesh.count = k
       s.mesh.instanceMatrix.needsUpdate = true
     }
-  }
-
-  private chainEnds() {
-    return {
-      a: this.model.anim.chainTop.getWorldPosition(new THREE.Vector3()),
-      b: this.model.anim.chainBottom.getWorldPosition(new THREE.Vector3()),
-    }
-  }
-
-  private updateChain() {
-    this.model.root.updateMatrixWorld(true)
-    const { a, b } = this.chainEnds()
-    const links = this.model.anim.chainLinks
-    const d = a.distanceTo(b)
-    const sag = Math.sqrt(Math.max(0, this.chainLength * this.chainLength - d * d)) * 0.5
-    const mid = a.clone().add(b).multiplyScalar(0.5).add(new THREE.Vector3(0, 0, sag))
-    const bez = new THREE.QuadraticBezierCurve3(a, mid, b)
-    const up = new THREE.Vector3(0, 1, 0)
-    const twist = new THREE.Quaternion().setFromAxisAngle(up, Math.PI / 2)
-    links.forEach((l, i) => {
-      const u = (i + 0.5) / links.length
-      l.position.copy(bez.getPoint(u))
-      l.quaternion.setFromUnitVectors(up, bez.getTangent(u).normalize())
-      if (i % 2) l.quaternion.multiply(twist)
-    })
   }
 
   // ---------- 毎フレーム ----------
@@ -916,18 +904,19 @@ export class Viewer {
       this.flushT += dt
       const t = this.flushT
       let step: number | null = null
-      FLOW_STEPS.forEach((s, i) => {
+      const dur = this.stage.flow.duration
+      this.stage.flow.steps.forEach((s, i) => {
         if (t >= s.at) step = i
       })
-      if (t >= FLOW_DURATION) {
+      if (t >= dur) {
         this.flushT = null
         step = null
       }
       this.setFlushStep(step)
-      this.applyFlow(Math.min(t, FLOW_DURATION))
+      this.applyFlow(Math.min(t, dur))
       if (this.flushT === null) this.cb.onFlushDone()
     }
-    this.updateChain()
+    this.model.update?.(dt, this.flushT !== null)
     this.clockT += dt
     this.updateLost(dt)
 

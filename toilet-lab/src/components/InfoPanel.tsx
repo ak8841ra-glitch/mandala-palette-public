@@ -1,11 +1,11 @@
 import { forwardRef, useEffect, useState } from 'react'
-import { PART_MAP, type PartId } from '../data/parts'
+import type { Part, PartId } from '../stages/types'
 import { Icon } from './Icon'
 
-type Props = { id: PartId; onClose: () => void; onJump: (id: PartId) => void }
+type Props = { id: PartId; parts: Record<PartId, Part>; onClose: () => void; onJump: (id: PartId) => void }
 
-export const InfoPanel = forwardRef<HTMLDivElement, Props>(function InfoPanel({ id, onClose, onJump }, ref) {
-  const p = PART_MAP[id]
+export const InfoPanel = forwardRef<HTMLDivElement, Props>(function InfoPanel({ id, parts, onClose, onJump }, ref) {
+  const p = parts[id]
   const [more, setMore] = useState(false)
   useEffect(() => setMore(false), [id])
 
@@ -28,7 +28,7 @@ export const InfoPanel = forwardRef<HTMLDivElement, Props>(function InfoPanel({ 
         {p.links.map((l) => (
           <li key={l.to + l.text}>
             <button onClick={() => onJump(l.to)}>
-              <b>{PART_MAP[l.to].name}</b>
+              <b>{parts[l.to].name}</b>
               <span>{l.text}</span>
               <Icon name="arrow" />
             </button>

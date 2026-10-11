@@ -1,5 +1,5 @@
-import { PART_MAP, type PartId } from '../data/parts'
-import { STAGES, TOILET_LOST } from '../data/game'
+import type { PartId, Stage } from '../stages/types'
+import { STAGES, nextStage } from '../stages'
 import { Icon } from './Icon'
 
 export type Game = {
@@ -11,37 +11,43 @@ export type Game = {
 
 export function GameCard({
   cardRef,
+  stage,
   game,
   onAgain,
+  onNext,
   onStages,
 }: {
   cardRef: React.RefObject<HTMLDivElement | null>
+  stage: Stage
   game: Game
   onAgain: () => void
+  onNext: (key: string) => void
   onStages: () => void
 }) {
-  const lost = TOILET_LOST.find((l) => l.id === game.part)!
-  const name = PART_MAP[game.part].name
+  const byId = Object.fromEntries(stage.parts.map((p) => [p.id, p]))
+  const lost = stage.lost.find((l) => l.id === game.part)!
+  const name = byId[game.part].name
 
   if (game.status === 'cleared') {
-    const next = STAGES.find((s) => !s.ready)
+    const next = nextStage(stage.key)
     return (
       <div className="quiz game" ref={cardRef} data-label-block role="status">
-        <p className="quiz-count">トイレステージ クリア！</p>
+        <p className="quiz-count">{stage.name}ステージ クリア！</p>
         <p className="quiz-q">おかえり、{name}！</p>
         <p className="quiz-a ok">
-          <b>{name}</b>：{PART_MAP[game.part].role}
+          <b>{name}</b>：{byId[game.part].role}
         </p>
-        {next && (
-          <p className="quiz-sub">
-            次のステージ「{next.name}」は準備中です。
-          </p>
-        )}
+        {next && !next.ready && <p className="quiz-sub">次のステージ「{next.name}」は準備中です。</p>}
         <div className="quiz-actions">
           <button onClick={onStages}>ステージを選ぶ</button>
-          <button className="primary" onClick={onAgain}>
+          <button className={next?.ready ? '' : 'primary'} onClick={onAgain}>
             別の子でもう一回
           </button>
+          {next?.ready && (
+            <button className="primary" onClick={() => onNext(next.key)}>
+              次のステージ：{next.name}へ
+            </button>
+          )}
         </div>
       </div>
     )
@@ -53,17 +59,17 @@ export function GameCard({
     say = 'よろしくね！元の席はどこだったかな…'
     sub = '元の場所をタップしてね。'
   } else if (game.status === 'wrong') {
-    const there = game.near && game.near !== game.part ? `そこは「${PART_MAP[game.near].name}」の場所みたい。` : ''
+    const there = game.near && game.near !== game.part ? `そこは「${byId[game.near].name}」の場所みたい。` : ''
     say = `ここじゃないみたい…${there}`
     sub = `ヒント：${lost.hints[Math.min(game.misses, 2) - 1] ?? lost.hints[0]}`
   } else if (game.status === 'returning') {
     say = 'ここだ！ありがとう！'
-    sub = 'ちゃんと働けるか、水を流してみよう。'
+    sub = `ちゃんと働けるか、${stage.flow.action === '水を流す' ? '水を流して' : '動かして'}みよう。`
   }
 
   return (
     <div className="quiz game" ref={cardRef} data-label-block role="status">
-      <p className="quiz-count">迷子パーツをもどそう ― トイレ</p>
+      <p className="quiz-count">迷子パーツをもどそう ― {stage.name}</p>
       <div className="speech">
         <span className="speech-name">{name}</span>
         <p>{say}</p>
@@ -74,19 +80,23 @@ export function GameCard({
 }
 
 export function StageSelect({
+  current,
   onClose,
+  onView,
   onLost,
   onQuiz,
 }: {
+  current: string
   onClose: () => void
-  onLost: () => void
-  onQuiz: () => void
+  onView: (key: string) => void
+  onLost: (key: string) => void
+  onQuiz: (key: string) => void
 }) {
   return (
     <div className="modal-back" onClick={onClose}>
       <div className="modal stages" role="dialog" aria-modal="true" aria-label="あそぶ" onClick={(e) => e.stopPropagation()}>
         <div className="panel-head">
-          <h2>あそぶ</h2>
+          <h2>ステージ</h2>
           <button className="icon-btn" onClick={onClose} aria-label="閉じる">
             <Icon name="close" />
           </button>
@@ -94,18 +104,22 @@ export function StageSelect({
         <p className="small">迷子になった部品を、元の場所に戻してあげよう。ステージをクリアすると次の設備へ進めます。</p>
         <ol className="stage-list">
           {STAGES.map((s, i) => (
-            <li key={s.key} className={s.ready ? '' : 'locked'}>
+            <li key={s.key} className={`${s.ready ? '' : 'locked'} ${s.key === current ? 'current' : ''}`}>
               <span className="stage-no">{i + 1}</span>
               <div className="stage-body">
-                <b>{s.name}</b>
+                <b>
+                  {s.name}
+                  {s.key === current && <em>表示中</em>}
+                </b>
                 <small>{s.sub}</small>
               </div>
               {s.ready ? (
                 <div className="stage-actions">
-                  <button className="primary" onClick={onLost}>
+                  <button className="primary" onClick={() => onLost(s.key)}>
                     迷子パーツ
                   </button>
-                  <button onClick={onQuiz}>部品クイズ</button>
+                  <button onClick={() => onQuiz(s.key)}>部品クイズ</button>
+                  {s.key !== current && <button onClick={() => onView(s.key)}>模型を見る</button>}
                 </div>
               ) : (
                 <span className="stage-lock">

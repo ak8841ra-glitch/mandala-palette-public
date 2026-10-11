@@ -14,6 +14,7 @@ const PATHS: Record<string, string> = {
   up: 'M6 15l6-6 6 6',
   lock: 'M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z',
   play: 'M8 5v14l11-7z',
+  snow: 'M12 2v20M4.2 7l15.6 10M4.2 17 19.8 7M9.5 3.5 12 6l2.5-2.5M9.5 20.5 12 18l2.5 2.5',
 }
 
 export function Icon({ name }: { name: keyof typeof PATHS | string }) {

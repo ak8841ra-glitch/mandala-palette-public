@@ -1,4 +1,4 @@
-import { PARTS, type Part } from './data/parts'
+import type { Part } from './stages/types'
 
 // カタカナ→ひらがな、全角英数→半角、小文字化、空白と記号を除去
 export function normalize(s: string): string {
@@ -11,7 +11,17 @@ export function normalize(s: string): string {
 
 type Entry = { part: Part; keys: { text: string; weight: number }[] }
 
-const INDEX: Entry[] = PARTS.map((part) => ({
+const cache = new WeakMap<Part[], Entry[]>()
+
+function indexOf(parts: Part[]): Entry[] {
+  const hit = cache.get(parts)
+  if (hit) return hit
+  const index = buildIndex(parts)
+  cache.set(parts, index)
+  return index
+}
+
+const buildIndex = (parts: Part[]): Entry[] => parts.map((part) => ({
   part,
   keys: [
     { text: normalize(part.name), weight: 4 },
@@ -23,11 +33,11 @@ const INDEX: Entry[] = PARTS.map((part) => ({
 
 export type Hit = { part: Part; matched: string }
 
-export function searchParts(query: string, limit = 6): Hit[] {
+export function searchParts(parts: Part[], query: string, limit = 6): Hit[] {
   const q = normalize(query)
   if (!q) return []
   const scored: { part: Part; score: number; matched: string }[] = []
-  for (const entry of INDEX) {
+  for (const entry of indexOf(parts)) {
     let best = 0
     let matched = ''
     entry.keys.forEach((k, i) => {

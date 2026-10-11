@@ -1,17 +1,18 @@
 import { useEffect } from 'react'
-import { MODEL_SCOPE, SIMPLIFICATIONS, SOURCES } from '../data/info'
+import type { Stage } from '../stages/types'
 import { Icon } from './Icon'
 
-export function RefsBody() {
+export function RefsBody({ stage }: { stage: Stage }) {
+  const { scope, simplifications, sources } = stage.info
   return (
     <>
       <section>
         <h3>この模型について</h3>
         <p>
-          一般的な床置き・タンク式トイレの<b>代表的な構造を簡略化した学習用模型</b>です。特定メーカーの製品ではなく、実際の機種とは形や部品が異なります。修理や分解の手順を案内するものではありません。
+          この{stage.name}は、<b>代表的な構造を簡略化した学習用模型</b>です。特定メーカーの製品ではなく、実際の機種とは形や部品が異なります。修理や分解の手順を案内するものではありません。
         </p>
         <ul>
-          {MODEL_SCOPE.map((s) => (
+          {scope.map((s) => (
             <li key={s}>{s}</li>
           ))}
         </ul>
@@ -19,7 +20,7 @@ export function RefsBody() {
       <section>
         <h3>省略・簡略化した点</h3>
         <ul>
-          {SIMPLIFICATIONS.map((s) => (
+          {simplifications.map((s) => (
             <li key={s}>{s}</li>
           ))}
         </ul>
@@ -27,7 +28,7 @@ export function RefsBody() {
       <section>
         <h3>参考資料</h3>
         <ul className="sources">
-          {SOURCES.map((s) => (
+          {sources.map((s) => (
             <li key={s.url}>
               <a href={s.url} target="_blank" rel="noreferrer noopener">
                 {s.title}
@@ -42,7 +43,7 @@ export function RefsBody() {
   )
 }
 
-export function RefsModal({ onClose }: { onClose: () => void }) {
+export function RefsModal({ stage, onClose }: { stage: Stage; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -57,7 +58,7 @@ export function RefsModal({ onClose }: { onClose: () => void }) {
             <Icon name="close" />
           </button>
         </div>
-        <RefsBody />
+        <RefsBody stage={stage} />
       </div>
     </div>
   )

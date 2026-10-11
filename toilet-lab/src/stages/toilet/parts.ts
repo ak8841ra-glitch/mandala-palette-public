@@ -2,45 +2,7 @@
 // level: 1 = 全体表示でも名前を出す主要設備 / 2 = 少し近づくと出す / 3 = かなり近づくと出す細部
 // inside: true の部品は「内部を見る」表示のときだけ見える（検索で選ぶと自動で内部表示に切り替わる）
 
-export type PartId =
-  | 'bowl'
-  | 'seat'
-  | 'lid'
-  | 'tank'
-  | 'tankLid'
-  | 'lever'
-  | 'stopValve'
-  | 'supplyPipe'
-  | 'supplyHose'
-  | 'ballTap'
-  | 'floatBall'
-  | 'chain'
-  | 'floatValve'
-  | 'overflow'
-  | 'refillTube'
-  | 'tankGasket'
-  | 'sealWater'
-  | 'trap'
-  | 'floorFlange'
-  | 'drainPipe'
-
-export type Term = { word: string; meaning: string }
-export type Link = { to: PartId; text: string }
-
-export type Part = {
-  id: PartId
-  name: string // 正式名称（一般的な呼び方のうち代表的なもの）
-  kana: string // 検索用のよみ
-  aliases: string[] // よくある呼び方
-  phrases: string[] // 検索用の言い換え（画面には出さない）
-  group: '便器まわり' | 'タンクの外側' | 'タンクの中' | '給水（きれいな水）' | '排水（流したあとの水）'
-  role: string // 一文で分かる役割
-  links: Link[] // どこにつながっているか
-  detail: string[] // 「詳しく」で読める補足
-  terms?: Term[] // 専門用語のミニ解説
-  level: 1 | 2 | 3
-  inside: boolean
-}
+import type { Part } from '../types'
 
 export const PARTS: Part[] = [
   {
@@ -430,7 +392,3 @@ export const PARTS: Part[] = [
   },
 ]
 
-export const PART_MAP: Record<PartId, Part> = Object.fromEntries(PARTS.map((p) => [p.id, p])) as Record<
-  PartId,
-  Part
->
