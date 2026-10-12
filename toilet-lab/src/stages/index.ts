@@ -1,11 +1,15 @@
 import type { Stage, StageStub } from './types'
 import { toilet } from './toilet'
 import { aircon } from './aircon'
+import { gas } from './gas'
+import { electric } from './electric'
 
 // ステージの並び。ready: false は「準備中」として一覧に出る
 export const STAGES: (Stage | StageStub)[] = [
   toilet,
   aircon,
+  gas,
+  electric,
   { key: 'faucet', name: '水栓', sub: 'キッチン・洗面の蛇口', ready: false },
   { key: 'breaker', name: 'ブレーカー', sub: '分電盤のしくみ', ready: false },
 ]

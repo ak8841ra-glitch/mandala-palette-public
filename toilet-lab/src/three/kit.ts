@@ -118,3 +118,55 @@ export function createRegistry(root: THREE.Group) {
 
   return { partMeshes, pickables, shells, cutPanels, cutFrames, hitMat, reg, proxy, env, cut }
 }
+
+// 薄い板が並んだ面（熱交換器のフィンなど）の縞模様
+export function stripes(lines: number, color = '#c7d0d6', line = '#9aa6ae', vertical = true) {
+  const c = document.createElement('canvas')
+  c.width = 256
+  c.height = 256
+  const g = c.getContext('2d')!
+  g.fillStyle = color
+  g.fillRect(0, 0, 256, 256)
+  g.strokeStyle = line
+  g.lineWidth = 2
+  for (let i = 0; i < lines; i++) {
+    const p = ((i + 0.5) * 256) / lines
+    g.beginPath()
+    if (vertical) {
+      g.moveTo(p, 0)
+      g.lineTo(p, 256)
+    } else {
+      g.moveTo(0, p)
+      g.lineTo(256, p)
+    }
+    g.stroke()
+  }
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
+// 壁の切り口（断面）：斜線で「ここで切っている」ことを示す板。x = 一定の面に置く
+export function sectionCap(x: number, y0: number, y1: number, z0: number, z1: number) {
+  const c = document.createElement('canvas')
+  c.width = c.height = 64
+  const g = c.getContext('2d')!
+  g.fillStyle = '#d6d1c7'
+  g.fillRect(0, 0, 64, 64)
+  g.strokeStyle = '#b9b2a5'
+  g.lineWidth = 3
+  for (let i = -64; i < 128; i += 16) {
+    g.beginPath()
+    g.moveTo(i, 64)
+    g.lineTo(i + 64, 0)
+    g.stroke()
+  }
+  const tex = new THREE.CanvasTexture(c)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.repeat.set(Math.max(1, (z1 - z0) / 1.5), Math.max(1, (y1 - y0) / 1.5))
+  tex.colorSpace = THREE.SRGBColorSpace
+  const cap = new THREE.Mesh(new THREE.PlaneGeometry(z1 - z0, y1 - y0), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }))
+  cap.rotation.y = Math.PI / 2
+  cap.position.set(x + 0.005, (y0 + y1) / 2, (z0 + z1) / 2)
+  return cap
+}

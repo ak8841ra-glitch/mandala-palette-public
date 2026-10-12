@@ -91,6 +91,8 @@ export class Viewer {
   private insetTarget = { right: 0, bottom: 0, top: 0 }
   private inset = { right: 0, bottom: 0, top: 0 }
   private baseFov = 38
+  // 画面下の操作ボタンの分は、いつも空けておく
+  private reserve = 96
   private frame = 0
   private streams: { mesh: THREE.InstancedMesh; curve: THREE.Curve<THREE.Vector3>; len: number; key: string }[] = []
   private resizeObs: ResizeObserver
@@ -468,7 +470,7 @@ export class Viewer {
   private homePosition(target: THREE.Vector3, dir: THREE.Vector3, scale = 1) {
     // 模型全体（高さ約9、幅約5）が画面に収まる距離を求める
     // 上下のカードやパネルで隠れる分を除いた高さで考える
-    const visibleH = Math.max(200, this.height - this.insetTarget.top - this.insetTarget.bottom)
+    const visibleH = Math.max(200, this.height - this.insetTarget.top - this.insetTarget.bottom - this.reserve)
     const vfov = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(this.baseFov) / 2) * (visibleH / this.height))
     const aspect = this.width / visibleH
     const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect)
@@ -513,21 +515,16 @@ export class Viewer {
   private applyViewOffset() {
     // 説明パネルなどに隠れない部分の中央に注目点が来るよう、投影の中心をずらす。
     // 仮想の大きな画面の一部を表示する形にし、見える範囲の画角は変えない。
-    const { right, bottom, top } = this.inset
+    const { right, top } = this.inset
+    const bottom = this.inset.bottom + this.reserve
     const w = this.width
     const h = this.height
-    if (right < 1 && bottom < 1 && top < 1) {
-      this.camera.clearViewOffset()
-      this.camera.aspect = w / h
-      this.camera.fov = this.baseFov
-    } else {
-      const fw = w + right
-      const fh = h + bottom + top
-      this.camera.aspect = fw / fh
-      const t = Math.tan(THREE.MathUtils.degToRad(this.baseFov) / 2) * (fh / h)
-      this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(t))
-      this.camera.setViewOffset(fw, fh, right, bottom, w, h)
-    }
+    const fw = w + right
+    const fh = h + bottom + top
+    this.camera.aspect = fw / fh
+    const t = Math.tan(THREE.MathUtils.degToRad(this.baseFov) / 2) * (fh / h)
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(t))
+    this.camera.setViewOffset(fw, fh, right, bottom, w, h)
     this.camera.updateProjectionMatrix()
   }
 

@@ -259,7 +259,7 @@ function Stage({ onFail }: { onFail: () => void }) {
       <header className="top">
         <button className="brand" data-label-block aria-label={`${stage.brand}（ステージを選ぶ）`} onClick={() => setStagesOpen(true)}>
           <span className="brand-mark" aria-hidden>
-            <Icon name={stage.flow.actionIcon === 'snow' ? 'snow' : 'drop'} />
+            <Icon name={stage.flow.actionIcon === 'flush' ? 'drop' : stage.flow.actionIcon} />
           </span>
           <span className="brand-text">
             {stage.brand}
