@@ -56,7 +56,7 @@ export default function Home({ heading, logo, tour, onEnter, onCreator, notice }
       <ul className="map-coming" aria-label="奥の展示室">
         <li>
           <button type="button" className="map-creator" onClick={onCreator}>
-            <img src={`${tour}../creator/mandala-purple.jpg`} alt="" draggable={false} />
+            <img src={`${tour}../creator/asuka-icon.png`} alt="" draggable={false} />
             <span><strong>つくったひと</strong><small>作者の展示室</small></span>
           </button>
         </li>
