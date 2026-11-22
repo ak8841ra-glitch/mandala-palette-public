@@ -1,8 +1,14 @@
 import { useState } from 'react'
 
-type ArtKey = 'blue' | 'purple' | 'pink' | 'green'
+type MoodKey = 'pink' | 'blue' | 'green'
+type GalleryKey = 'blue' | 'purple' | 'pink' | 'green'
 const base = `${import.meta.env.BASE_URL}assets/`
-const art: Record<ArtKey, { name: string; src: string; alt: string; caption: string }> = {
+const moodArt: Record<MoodKey, { name: string; src: string }> = {
+  pink: { name: 'ピンク', src: `${base}creator/mood-pink.jpg` },
+  blue: { name: '青', src: `${base}creator/mood-blue.jpg` },
+  green: { name: '緑', src: `${base}creator/mood-green.jpg` },
+}
+const galleryArt: Record<GalleryKey, { name: string; src: string; alt: string; caption: string }> = {
   blue: { name: '青', src: `${base}creator/art-blue.jpg`, alt: '青と緑の点や線を重ねた手描きの曼荼羅', caption: '点と色を重ねて描いた作品' },
   purple: { name: '紫', src: `${base}creator/art-purple.jpg`, alt: '紫と桃色で花を描いた手描きの曼荼羅', caption: '花びらの中に光を散らした作品' },
   pink: { name: '桃', src: `${base}creator/art-pink.jpg`, alt: '布バッグに桃色で描いた手描きの曼荼羅', caption: '日常に持ち歩けるよう描いた作品' },
@@ -10,18 +16,18 @@ const art: Record<ArtKey, { name: string; src: string; alt: string; caption: str
 }
 
 export default function CreatorRoom({ onHome }: { onHome: () => void }) {
-  const [color, setColor] = useState<ArtKey>('blue')
-  const selected = art[color]
+  const [color, setColor] = useState<MoodKey>('pink')
+  const selected = moodArt[color]
   return <section className={`creator-room creator-room--${color}`} aria-labelledby="creator-title">
     <nav className="creator-nav" aria-label="作者の展示室">
       <button type="button" className="back-button" onClick={onHome}>← 館内マップへ戻る</button>
       <span>作者の展示室</span>
     </nav>
-    <header className="creator-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(250,247,239,.94) 0%, rgba(250,247,239,.82) 48%, rgba(250,247,239,.3) 100%), url(${selected.src})` }}>
+    <header className="creator-hero" style={{ backgroundImage: `url(${selected.src})` }}>
       <div className="creator-profile">
         <p className="exhibit-number">CREATOR'S ROOM</p>
         <div className="creator-name-row"><img src={`${base}creator/asuka-icon.png`} alt="ラベンダー色の曼荼羅模様を背景にしたアスカのアイコン" /><div><h1 id="creator-title">アスカ</h1><p>「こんなのがあったらいいな」と思ったものを、AIと一緒に作っています。</p></div></div>
-        <fieldset className="art-colors"><legend>今、気になる色は？</legend><div>{(Object.keys(art) as ArtKey[]).map(key => <button key={key} type="button" aria-pressed={color === key} onClick={() => setColor(key)}><i className={`color-dot color-dot--${key}`} aria-hidden="true" />{art[key].name}</button>)}</div></fieldset>
+        <fieldset className="art-colors"><legend>今、気になる色は？</legend><div>{(Object.keys(moodArt) as MoodKey[]).map(key => <button key={key} type="button" aria-pressed={color === key} onClick={() => setColor(key)}><i className={`color-dot color-dot--${key}`} aria-hidden="true" />{moodArt[key].name}</button>)}</div></fieldset>
         <p className="creator-background-note">選んだ色に合わせて、背景の曼荼羅が変わります。</p>
       </div>
     </header>
@@ -31,7 +37,7 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
     </section>
     <section className="creator-section" aria-labelledby="art-gallery-title">
       <div className="exhibit-heading"><p>HAND-DRAWN MANDALA ART</p><h2 id="art-gallery-title">手描き曼荼羅アート作品</h2><span>一枚ずつ手で描いた作品を、全体が見える形で展示しています。</span></div>
-      <div className="creator-gallery">{(Object.keys(art) as ArtKey[]).map(key => <figure key={key}><img src={art[key].src} alt={art[key].alt} /><figcaption>{art[key].name} — {art[key].caption}</figcaption></figure>)}</div>
+      <div className="creator-gallery">{(Object.keys(galleryArt) as GalleryKey[]).map(key => <figure key={key}><img src={galleryArt[key].src} alt={galleryArt[key].alt} /><figcaption>{galleryArt[key].name} — {galleryArt[key].caption}</figcaption></figure>)}</div>
     </section>
     <section className="creator-section" aria-labelledby="other-works-title">
       <div className="exhibit-heading"><p>OTHER WORKS</p><h2 id="other-works-title">ほかにつくったもの</h2></div>
