@@ -36,8 +36,8 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
       <div className="main-work-grid"><img src={`${base}creator/mandala-palette-intro.png`} alt="スマートフォンで曼荼羅paletteを使う様子とアプリ画面" /><div><h3>答えを決めつけない、自己整理の時間</h3><p>色と言葉を入り口に、自分の気持ちを見つめ、原画のパーツを組み合わせて自分だけの曼荼羅をつくるWebアプリです。</p><dl><div><dt>つくったもの</dt><dd>色と言葉を選んで眺める部屋と、自由に曼荼羅をつくるアトリエ</dd></div><div><dt>工夫したこと</dt><dd>気持ちを断定せず、迷わず進められる言葉と画面の流れ</dd></div></dl><button type="button" className="button-primary" onClick={onHome}>曼荼羅paletteをひらく</button></div></div>
     </section>
     <section className="creator-section" aria-labelledby="art-gallery-title">
-      <div className="exhibit-heading"><p>HAND-DRAWN MANDALA ART</p><h2 id="art-gallery-title">手描き曼荼羅アート作品</h2><span>一枚ずつ手で描いた作品を、全体が見える形で展示しています。</span></div>
-      <div className="creator-gallery">{(Object.keys(galleryArt) as GalleryKey[]).map(key => <figure key={key}><img src={galleryArt[key].src} alt={galleryArt[key].alt} /><figcaption>{galleryArt[key].name} — {galleryArt[key].caption}</figcaption></figure>)}</div>
+      <div className="exhibit-heading"><p>HAND-DRAWN MANDALA ART</p><h2 id="art-gallery-title">手描き曼荼羅アート作品</h2></div>
+      <div className="creator-gallery">{(Object.keys(galleryArt) as GalleryKey[]).map(key => <figure key={key}><img src={galleryArt[key].src} alt={galleryArt[key].alt} /></figure>)}</div>
     </section>
     <section className="creator-section" aria-labelledby="other-works-title">
       <div className="exhibit-heading"><p>OTHER WORKS</p><h2 id="other-works-title">ほかにつくったもの</h2></div>
