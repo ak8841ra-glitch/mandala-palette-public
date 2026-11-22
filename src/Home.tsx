@@ -13,13 +13,13 @@ const ROOMS: readonly Room[] = [
   { id: 'make', room: '曼荼羅のアトリエ', name: '自分でつくる', images: ['make-cover.jpg', 'make-1.jpg', 'make-2.jpg', 'make-3.jpg'] },
 ]
 // New areas are added here, past the open rooms.
-const COMING = ['ギャラリー', 'わたしの展示室'] as const
+const COMING = ['ギャラリー'] as const
 
 const reducedMotion = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
-export default function Home({ heading, logo, tour, onEnter, notice }: {
+export default function Home({ heading, logo, tour, onEnter, onCreator, notice }: {
   heading: Ref<HTMLHeadingElement>; logo: string; tour: string
-  onEnter: (room: RoomId) => void; notice: ReactNode
+  onEnter: (room: RoomId) => void; onCreator: () => void; notice: ReactNode
 }) {
   // One clock for both rooms; the second room runs half a beat behind so they don't change together.
   const [tick, setTick] = useState(0)
@@ -53,7 +53,13 @@ export default function Home({ heading, logo, tour, onEnter, notice }: {
           </li>
         })}
       </ul>
-      <ul className="map-coming" aria-label="準備中の部屋">
+      <ul className="map-coming" aria-label="奥の展示室">
+        <li>
+          <button type="button" className="map-creator" onClick={onCreator}>
+            <img src={`${tour}../creator/mandala-purple.jpg`} alt="" draggable={false} />
+            <span><strong>つくったひと</strong><small>作者の展示室</small></span>
+          </button>
+        </li>
         {COMING.map(name => <li key={name}><span className="map-label">{name}</span><small>準備中</small></li>)}
       </ul>
     </nav>

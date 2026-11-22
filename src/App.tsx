@@ -12,11 +12,12 @@ import type { Preset } from './omakase'
 import type { PlacedCard } from './MandalaField'
 import { GUIDES, THEMES, emptyNotes } from './guide'
 import type { Guide, Notes, Theme } from './guide'
+import CreatorRoom from './CreatorRoom'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
 const logo = `${import.meta.env.BASE_URL}assets/logo-palette.jpg`
 
-type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make'
+type Screen = 'home' | 'theme' | 'pick' | 'field' | 'reflection' | 'make' | 'creator'
 const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflection', 'make']
 
 // The draft lives only in this browser, so an interrupted session can resume after a reload.
@@ -49,12 +50,12 @@ function ring(count: number, index: number) {
 
 export default function App() {
   const [draft] = useState(loadDraft)
-  const [screen, setScreen] = useState<Screen>('home')
+  const [screen, setScreen] = useState<Screen>(() => window.location.hash === '#creator' ? 'creator' : 'home')
   // Drafts from older versions may name screens that no longer exist.
   const [resumeScreen, setResumeScreen] = useState<Screen | null>(draft.screen && draft.screen !== 'home'
     ? SCREENS.includes(draft.screen) ? draft.screen : draft.cards?.length ? 'field' : 'pick' : null)
   function goHome() {
-    if (screen !== 'home') setResumeScreen(screen)
+    if (screen !== 'home' && screen !== 'creator') setResumeScreen(screen)
     setScreen('home')
   }
   const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
@@ -79,7 +80,13 @@ export default function App() {
   }, [screen])
 
   useEffect(() => {
-    const saved: Draft = { screen: screen === 'home' ? resumeScreen ?? 'home' : screen, themeId: theme?.id ?? null,
+    const next = screen === 'creator' ? '#creator' : window.location.hash === '#creator' ? '' : window.location.hash
+    if (next !== window.location.hash) history.replaceState(null, '', `${location.pathname}${location.search}${next}`)
+  }, [screen])
+
+  useEffect(() => {
+    const savedScreen = screen === 'creator' ? resumeScreen ?? 'home' : screen === 'home' ? resumeScreen ?? 'home' : screen
+    const saved: Draft = { screen: savedScreen, themeId: theme?.id ?? null,
       guide, cards, picked, open, notes, showWords, maker }
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
   }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker])
@@ -118,7 +125,7 @@ export default function App() {
   return (
     <main className="page">
       <header><button type="button" className="brand brand-home" aria-label="曼荼羅palette：トップへ戻る" onClick={goHome}>曼荼羅<span>palette</span></button></header>
-      {screen === 'home' ? <Home heading={heading} logo={logo} tour={`${import.meta.env.BASE_URL}assets/tour/`} onEnter={enter}
+      {screen === 'home' ? <Home heading={heading} logo={logo} tour={`${import.meta.env.BASE_URL}assets/tour/`} onEnter={enter} onCreator={() => setScreen('creator')}
         notice={confirmFresh ? <div className="confirm-fresh" role="alertdialog" aria-labelledby="confirm-fresh-text">
           <p id="confirm-fresh-text" className="lead">前回の途中の作品があります。</p>
           <p className="hint">はじめからにすると、途中の作品は消えます。</p>
@@ -130,6 +137,7 @@ export default function App() {
         </div> : resumeScreen && <button type="button" className="back-button resume" onClick={() => setScreen(resumeScreen)}>
           前回のつづきから<span aria-hidden="true">→</span>
         </button>} />
+      : screen === 'creator' ? <CreatorRoom onHome={goHome} />
       : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
         onMake={() => { setPresets(presetsFrom(cards)); setMaker(emptyMaker()); setScreen('make') }} /> : screen === 'make'
         ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
