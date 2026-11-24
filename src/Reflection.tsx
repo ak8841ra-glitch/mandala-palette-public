@@ -6,7 +6,7 @@ import type { Guide, Notes, Reaction, ReactionKey, Theme } from './guide'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
 import Steps from './Steps'
-import { makeDeepPrompt } from './deepPrompt'
+import { makeDeepPrompt, makeReadingPrompt } from './deepPrompt'
 
 // Match the site fonts and the ivory / charcoal palette in style.css.
 const font = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif'
@@ -155,11 +155,14 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     finally { setBusy(false) }
   }
 
-  async function copyDeepPrompt() {
+  async function copyAiPrompt(kind: 'deep' | 'reading') {
     setCopyStatus('')
     try {
-      await navigator.clipboard.writeText(makeDeepPrompt(cards, guide, theme))
-      setCopyStatus('深掘り用プロンプトをコピーしました。')
+      const prompt = kind === 'deep' ? makeDeepPrompt(cards, guide, theme) : makeReadingPrompt(cards, guide, theme)
+      await navigator.clipboard.writeText(prompt)
+      setCopyStatus(kind === 'deep'
+        ? '「AIと一緒に言葉を探す」の文章をコピーしました。'
+        : '「AIに読み解いてもらう」の文章をコピーしました。')
     } catch {
       setCopyStatus('コピーできませんでした。ブラウザのクリップボード設定をご確認ください。')
     }
@@ -225,11 +228,31 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     </div>
     <div className="reflection-export-actions">
       <button type="button" className="button-primary" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
-      <button type="button" onClick={copyDeepPrompt}>深掘り用プロンプトをコピー</button>
     </div>
-    <p className="export-hint">画像とコピーした文章を、お使いの生成AIへ渡すと、選んだ色と言葉をさらに深掘りできます。画像なしでも使えます。</p>
-    <p className="copy-status" role="status" aria-live="polite">{copyStatus}</p>
     {saved && <SavedResult saved={saved} title={notes.title.trim() || '曼荼羅palette'} />}
+    <section className="ai-followup" aria-labelledby="ai-followup-title">
+      <p className="section-kicker">WITH YOUR AI</p>
+      <h2 id="ai-followup-title">いつもの生成AIと、もう少し眺める</h2>
+      <ol className="ai-use-steps">
+        <li><span>1</span><p><strong>上のボタンで作品を画像保存</strong><small>スマホやパソコンの写真・ダウンロード先に入ります。</small></p></li>
+        <li><span>2</span><p><strong>下から、やってみたい方をコピー</strong><small>選んだ色・言葉・配置も、文章に入っています。</small></p></li>
+        <li><span>3</span><p><strong>いつもの生成AIへ、画像と文章を送る</strong><small>ChatGPTやGeminiなどで、画像を添付して文章を貼り付けます。</small></p></li>
+      </ol>
+      <div className="ai-prompt-choices">
+        <button type="button" onClick={() => copyAiPrompt('deep')}>
+          <strong>AIと一緒に言葉を探す</strong>
+          <span>会話しながら、自分にしっくりくる言葉を深掘りします。</span>
+          <small>このプロンプトをコピー</small>
+        </button>
+        <button type="button" onClick={() => copyAiPrompt('reading')}>
+          <strong>AIに読み解いてもらう</strong>
+          <span>色・言葉・配置から、AIが感じた全体像や物語を聞きます。</span>
+          <small>このプロンプトをコピー</small>
+        </button>
+      </div>
+      <p className="export-hint">画像を添付できない場合は、コピーした文章だけでも使えます。</p>
+      <p className="copy-status" role="status" aria-live="polite">{copyStatus}</p>
+    </section>
     <div className="next-step"><button type="button" className="button-quiet" onClick={onMake}>この色で曼荼羅をつくる<span aria-hidden="true">→</span></button></div>
     <div className="return-home-action"><button type="button" className="back-button" onClick={onHome}>トップへ戻る</button></div>
     </div>
