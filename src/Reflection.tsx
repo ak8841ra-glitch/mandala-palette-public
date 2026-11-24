@@ -6,6 +6,7 @@ import type { Guide, Notes, Reaction, ReactionKey, Theme } from './guide'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
 import Steps from './Steps'
+import { makeDeepPrompt } from './deepPrompt'
 
 // Match the site fonts and the ivory / charcoal palette in style.css.
 const font = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif'
@@ -41,6 +42,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState<Saved | null>(null)
   const [focusId, setFocusId] = useState<string | null>(null)
+  const [copyStatus, setCopyStatus] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -153,6 +155,16 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     finally { setBusy(false) }
   }
 
+  async function copyDeepPrompt() {
+    setCopyStatus('')
+    try {
+      await navigator.clipboard.writeText(makeDeepPrompt(cards, guide, theme))
+      setCopyStatus('深掘り用プロンプトをコピーしました。')
+    } catch {
+      setCopyStatus('コピーできませんでした。ブラウザのクリップボード設定をご確認ください。')
+    }
+  }
+
   return <section className="selection reflection" aria-labelledby="reflection-title">
     <nav className="selection-nav" aria-label="画面の移動">
       <button className="back-button" type="button" onClick={onBack}>← 配置を調整する</button>
@@ -211,7 +223,12 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
           onChange={event => onNotes({ ...notes, title: event.target.value })} />
       </div>
     </div>
-    <button type="button" className="button-primary" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
+    <div className="reflection-export-actions">
+      <button type="button" className="button-primary" disabled={!preview || busy} onClick={save}>{busy ? '画像を作っています…' : '作品を画像で保存'}</button>
+      <button type="button" onClick={copyDeepPrompt}>深掘り用プロンプトをコピー</button>
+    </div>
+    <p className="export-hint">画像とコピーした文章を、お使いの生成AIへ渡すと、選んだ色と言葉をさらに深掘りできます。画像なしでも使えます。</p>
+    <p className="copy-status" role="status" aria-live="polite">{copyStatus}</p>
     {saved && <SavedResult saved={saved} title={notes.title.trim() || '曼荼羅palette'} />}
     <div className="next-step"><button type="button" className="button-quiet" onClick={onMake}>この色で曼荼羅をつくる<span aria-hidden="true">→</span></button></div>
     <div className="return-home-action"><button type="button" className="back-button" onClick={onHome}>トップへ戻る</button></div>
