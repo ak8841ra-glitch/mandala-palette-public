@@ -12,7 +12,7 @@ import { makeDeepPrompt, makeReadingPrompt } from './deepPrompt'
 const font = '"Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", sans-serif'
 const serif = '"Zen Old Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif'
 // Card diameters as a share of the field, matching MandalaField.
-const DIAMETER = { small: .20, medium: .28, large: .36 } as const
+const DIAMETER = { tiny: .14, small: .20, medium: .28, large: .36 } as const
 const PAPER = '#FFFDF8', INK = '#3A3639', INK_SOFT = '#6E6868', LINE = '#E6DED2'
 
 function lines(ctx: CanvasRenderingContext2D, text: string, width: number) {
@@ -33,25 +33,35 @@ function wordsAt(cards: PlacedCard[], spot: typeof TRIANGLE_SPOTS[number]) {
   return cards.filter(card => Math.hypot(card.x - spot.x, card.y - spot.y) < .16).map(card => card.word)
 }
 
-function drawComparisonGuide(ctx: CanvasRenderingContext2D, comparison: Comparison) {
+function drawComparisonGuide(ctx: CanvasRenderingContext2D, comparison: Comparison, labelsOnly = false) {
   const center = 600, inner = 168, outer = 564, labelRadius = 478
   const geometry = comparisonAngles(comparison.count)
   ctx.save()
-  ctx.strokeStyle = '#8A7F9570'; ctx.lineWidth = 2; ctx.setLineDash([6, 8])
-  ctx.beginPath(); ctx.arc(center, center, inner, 0, Math.PI * 2); ctx.stroke()
-  for (const angle of geometry.boundaries) {
-    ctx.beginPath()
-    ctx.moveTo(center + Math.cos(angle) * inner, center + Math.sin(angle) * inner)
-    ctx.lineTo(center + Math.cos(angle) * outer, center + Math.sin(angle) * outer)
-    ctx.stroke()
+  if (!labelsOnly) {
+    ctx.strokeStyle = '#8A7F9570'; ctx.lineWidth = 2; ctx.setLineDash([6, 8])
+    ctx.beginPath(); ctx.arc(center, center, inner, 0, Math.PI * 2); ctx.stroke()
+    for (const angle of geometry.boundaries) {
+      ctx.beginPath()
+      ctx.moveTo(center + Math.cos(angle) * inner, center + Math.sin(angle) * inner)
+      ctx.lineTo(center + Math.cos(angle) * outer, center + Math.sin(angle) * outer)
+      ctx.stroke()
+    }
+    ctx.restore()
+    return
   }
-  ctx.setLineDash([]); ctx.fillStyle = INK_SOFT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.setLineDash([]); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.font = `${comparison.count > 8 ? 20 : comparison.count > 5 ? 23 : 27}px ${font}`
   geometry.centers.forEach((angle, index) => {
     const label = (comparison.labels[index]?.trim() || `領域${index + 1}`).slice(0, 12)
-    ctx.fillText(label, center + Math.cos(angle) * labelRadius, center + Math.sin(angle) * labelRadius)
+    const x = center + Math.cos(angle) * labelRadius, y = center + Math.sin(angle) * labelRadius
+    const width = ctx.measureText(label).width + 28, height = comparison.count > 8 ? 34 : 40
+    ctx.fillStyle = '#FFFDF8E8'; ctx.beginPath(); ctx.roundRect(x - width / 2, y - height / 2, width, height, height / 2); ctx.fill()
+    ctx.fillStyle = INK_SOFT; ctx.fillText(label, x, y)
   })
-  ctx.font = `24px ${font}`; ctx.fillText('共通', center, center)
+  ctx.font = `24px ${font}`
+  const commonWidth = ctx.measureText('共通').width + 26
+  ctx.fillStyle = '#FFFDF8E8'; ctx.beginPath(); ctx.roundRect(center - commonWidth / 2, center - 19, commonWidth, 38, 19); ctx.fill()
+  ctx.fillStyle = INK_SOFT; ctx.fillText('共通', center, center)
   ctx.restore()
 }
 
@@ -79,20 +89,21 @@ export default function Reflection({ cards, artwork, guide, comparison, theme, n
       ctx.drawImage(art, 0, 0, 1200, 1200)
       if (guide === 'compare') drawComparisonGuide(ctx, comparison)
       for (const card of [...cards].sort((a, b) => a.z - b.z)) {
-        const diameter = { small: 240, medium: 336, large: 432 }[card.size ?? 'medium']
+        const diameter = { tiny: 168, small: 240, medium: 336, large: 432 }[card.size ?? 'medium']
         const x = card.x * 1200, y = card.y * 1200
         ctx.save()
         ctx.shadowColor = '#00000030'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4
         ctx.fillStyle = card.bg; ctx.beginPath(); ctx.arc(x, y, diameter / 2, 0, Math.PI * 2); ctx.fill()
         ctx.restore()
         if (showWords) {
-          const size = { small: 29, medium: 36, large: 43 }[card.size ?? 'medium']
+          const size = { tiny: 22, small: 29, medium: 36, large: 43 }[card.size ?? 'medium']
           ctx.font = `${size}px ${font}`; ctx.fillStyle = card.ink
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
           const wrapped = lines(ctx, card.word, diameter * .72)
           wrapped.forEach((line, i) => ctx.fillText(line, x, y + (i - (wrapped.length - 1) / 2) * size * 1.3))
         }
       }
+      if (guide === 'compare') drawComparisonGuide(ctx, comparison, true)
       if (!cancelled) setPreview(canvas.toDataURL('image/png'))
     }
     render().catch(() => { if (!cancelled) setError('作品を表示できませんでした。配置に戻って、もう一度お試しください。') })

@@ -170,6 +170,9 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .field-guide { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: #8A7F95; stroke-width: .3; stroke-dasharray: 1 1.2; stroke-linecap: round; }
 .field-guide text { fill: var(--ink-soft); stroke: none; font-size: 3.4px; text-anchor: middle; dominant-baseline: middle; }
 .comparison-guide line { stroke-dasharray: 1 1.2; }
+.comparison-field-labels { position: absolute; inset: 0; z-index: 1000; pointer-events: none; }
+.comparison-field-labels span { position: absolute; translate: -50% -50%; max-width: 28%; padding: 3px 9px; border: 1px solid rgb(138 127 149 / .24); border-radius: 999px; background: rgb(255 253 248 / .91); color: var(--ink-soft); font-size: clamp(10px, 2.5cqw, 14px); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 0 1px 5px rgb(58 54 57 / .08); }
+.comparison-field-labels .comparison-common-label { max-width: none; }
 .placed-card { position: absolute; width: 28%; aspect-ratio: 1; min-height: 0; padding: 3%; border: 0; border-radius: 50%; transform: translate(-50%, -50%); line-height: 1.3; text-align: center; touch-action: none; user-select: none; cursor: grab; box-shadow: 0 4px 12px rgb(58 54 57 / .22); }
 .placed-card span { position: relative; z-index: 1; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .placed-card:active { cursor: grabbing; }

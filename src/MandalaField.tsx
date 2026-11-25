@@ -11,11 +11,11 @@ export interface PlacedCard extends Keyword {
   colorName: string
   x: number
   y: number
-  size?: 'small' | 'medium' | 'large'
+  size?: 'tiny' | 'small' | 'medium' | 'large'
   z: number
 }
 
-const sizes = { small: { label: '小', diameter: .20 }, medium: { label: '中', diameter: .28 }, large: { label: '大', diameter: .36 } } as const
+const sizes = { tiny: { label: '極小', diameter: .14 }, small: { label: '小', diameter: .20 }, medium: { label: '中', diameter: .28 }, large: { label: '大', diameter: .36 } } as const
 // Reserve room for the largest size so resizing never moves the center.
 const clamp = (value: number) => Math.max(.18, Math.min(.82, value))
 
@@ -41,14 +41,6 @@ function FieldGuide({ guide, comparison }: { guide: Guide; comparison: Compariso
         const inner = point(angle, 14), outer = point(angle, 47)
         return <line key={`line-${index}`} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} />
       })}
-      {geometry.centers.map((angle, index) => {
-        const label = point(angle, 40)
-        return <text key={`label-${index}`} x={label.x} y={label.y}
-          style={{ fontSize: comparison.count > 8 ? '2.25px' : comparison.count > 5 ? '2.7px' : '3.2px' }}>
-          {(comparison.labels[index]?.trim() || String(index + 1)).slice(0, 10)}
-        </text>
-      })}
-      <text x="50" y="50">共通</text>
     </svg>
   }
   return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
@@ -56,6 +48,17 @@ function FieldGuide({ guide, comparison }: { guide: Guide; comparison: Compariso
     <text x="50" y="51.5">内側</text>
     <text x="50" y="97">外側</text>
   </svg>
+}
+
+// Comparison names stay above the movable circles, so they remain readable even in a crowded field.
+function ComparisonLabels({ comparison }: { comparison: Comparison }) {
+  const geometry = comparisonAngles(comparison.count)
+  return <div className="comparison-field-labels" aria-hidden="true">
+    {geometry.centers.map((angle, index) => <span key={index} style={{
+      left: `${50 + Math.cos(angle) * 40}%`, top: `${50 + Math.sin(angle) * 40}%`
+    }}>{(comparison.labels[index]?.trim() || String(index + 1)).slice(0, 12)}</span>)}
+    <span className="comparison-common-label" style={{ left: '50%', top: '50%' }}>共通</span>
+  </div>
 }
 
 export default function MandalaField({ cards, setCards, onAdd, artwork, onComplete, guide, onGuide, comparison, onComparison, theme }: {
@@ -172,7 +175,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
       {cards.map(card => <button key={card.instanceId} id={`card-${card.instanceId}`} type="button" className="placed-card"
         aria-pressed={selectedId === card.instanceId}
         aria-label={`${card.word}（${card.colorName}・${cards.indexOf(card) + 1}枚目）を移動`}
-        style={{ width: `${sizes[card.size ?? 'medium'].diameter * 100}%`, fontSize: `clamp(11px, ${card.size === 'small' ? 2.4 : card.size === 'large' ? 3.6 : 3}cqw, 24px)`, left: `${card.x * 100}%`, top: `${card.y * 100}%`, zIndex: card.z, background: card.bg, color: card.ink }}
+        style={{ width: `${sizes[card.size ?? 'medium'].diameter * 100}%`, fontSize: `clamp(10px, ${card.size === 'tiny' ? 1.9 : card.size === 'small' ? 2.4 : card.size === 'large' ? 3.6 : 3}cqw, 24px)`, left: `${card.x * 100}%`, top: `${card.y * 100}%`, zIndex: card.z, background: card.bg, color: card.ink }}
         onPointerDown={event => start(event, card)} onPointerMove={move}
         onPointerUp={() => { drag.current = null }}
         onPointerCancel={() => { drag.current = null }}
@@ -191,6 +194,7 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
           setCards(previous => previous.map(item => item.instanceId === card.instanceId
             ? { ...item, x: clamp(item.x + direction[0]! * step), y: clamp(item.y + direction[1]! * step) } : item))
         }}><span>{card.word}</span></button>)}
+      {guide === 'compare' && <ComparisonLabels comparison={comparison} />}
     </div>
     <div className="card-size-space">
       {selected && <div className="card-size-controls" role="group" aria-label={`「${selected.word}」の操作`}>

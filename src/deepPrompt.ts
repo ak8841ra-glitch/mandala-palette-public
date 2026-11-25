@@ -2,8 +2,8 @@ import type { PlacedCard } from './MandalaField'
 import { emptyComparison, placeOf } from './guide'
 import type { Comparison, Guide, Theme } from './guide'
 
-const diameter = { small: .20, medium: .28, large: .36 } as const
-const sizeLabel = { small: '小', medium: '中', large: '大' } as const
+const diameter = { tiny: .14, small: .20, medium: .28, large: .36 } as const
+const sizeLabel = { tiny: '極小', small: '小', medium: '中', large: '大' } as const
 
 function roughPosition(x: number, y: number) {
   const horizontal = x < .37 ? '左' : x > .63 ? '右' : '中央'

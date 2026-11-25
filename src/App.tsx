@@ -31,7 +31,7 @@ function loadDraft(): Partial<Draft> {
 }
 
 // Each card's color counts by its size, so larger cards lead the おまかせ design.
-const SIZE_WEIGHT = { small: 1, medium: 2, large: 3 } as const
+const SIZE_WEIGHT = { tiny: .5, small: 1, medium: 2, large: 3 } as const
 function presetsFrom(cards: PlacedCard[]): Preset[] {
   const weights = new Map<string, number>()
   for (const card of cards) weights.set(card.bg, (weights.get(card.bg) ?? 0) + SIZE_WEIGHT[card.size ?? 'medium'])
