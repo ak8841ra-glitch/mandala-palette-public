@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { PlacedCard } from './MandalaField'
-import { AREAS, REACTIONS, TRIANGLE_SPOTS, hitokoto, placeOf } from './guide'
-import type { Guide, Notes, Reaction, ReactionKey, Theme } from './guide'
+import { AREAS, REACTIONS, TRIANGLE_SPOTS, comparisonAngles, hitokoto, placeOf } from './guide'
+import type { Comparison, Guide, Notes, Reaction, ReactionKey, Theme } from './guide'
 import { SavedResult, loadImage, saveCanvas, today } from './save'
 import type { Saved } from './save'
 import Steps from './Steps'
@@ -33,8 +33,30 @@ function wordsAt(cards: PlacedCard[], spot: typeof TRIANGLE_SPOTS[number]) {
   return cards.filter(card => Math.hypot(card.x - spot.x, card.y - spot.y) < .16).map(card => card.word)
 }
 
-export default function Reflection({ cards, artwork, guide, theme, notes, onNotes, showWords, onShowWords, onBack, onHome, onMake }: {
-  cards: PlacedCard[]; artwork: string; guide: Guide; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
+function drawComparisonGuide(ctx: CanvasRenderingContext2D, comparison: Comparison) {
+  const center = 600, inner = 168, outer = 564, labelRadius = 478
+  const geometry = comparisonAngles(comparison.count)
+  ctx.save()
+  ctx.strokeStyle = '#8A7F9570'; ctx.lineWidth = 2; ctx.setLineDash([6, 8])
+  ctx.beginPath(); ctx.arc(center, center, inner, 0, Math.PI * 2); ctx.stroke()
+  for (const angle of geometry.boundaries) {
+    ctx.beginPath()
+    ctx.moveTo(center + Math.cos(angle) * inner, center + Math.sin(angle) * inner)
+    ctx.lineTo(center + Math.cos(angle) * outer, center + Math.sin(angle) * outer)
+    ctx.stroke()
+  }
+  ctx.setLineDash([]); ctx.fillStyle = INK_SOFT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.font = `${comparison.count > 8 ? 20 : comparison.count > 5 ? 23 : 27}px ${font}`
+  geometry.centers.forEach((angle, index) => {
+    const label = (comparison.labels[index]?.trim() || `領域${index + 1}`).slice(0, 12)
+    ctx.fillText(label, center + Math.cos(angle) * labelRadius, center + Math.sin(angle) * labelRadius)
+  })
+  ctx.font = `24px ${font}`; ctx.fillText('共通', center, center)
+  ctx.restore()
+}
+
+export default function Reflection({ cards, artwork, guide, comparison, theme, notes, onNotes, showWords, onShowWords, onBack, onHome, onMake }: {
+  cards: PlacedCard[]; artwork: string; guide: Guide; comparison: Comparison; theme: Theme | null; notes: Notes; onNotes: (notes: Notes) => void
   showWords: boolean; onShowWords: (show: boolean) => void; onBack: () => void; onHome: () => void; onMake: () => void
 }) {
   const [preview, setPreview] = useState('')
@@ -55,6 +77,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
       const ctx = canvas.getContext('2d')!
       ctx.fillStyle = PAPER; ctx.fillRect(0, 0, 1200, 1200)
       ctx.drawImage(art, 0, 0, 1200, 1200)
+      if (guide === 'compare') drawComparisonGuide(ctx, comparison)
       for (const card of [...cards].sort((a, b) => a.z - b.z)) {
         const diameter = { small: 240, medium: 336, large: 432 }[card.size ?? 'medium']
         const x = card.x * 1200, y = card.y * 1200
@@ -74,7 +97,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
     }
     render().catch(() => { if (!cancelled) setError('作品を表示できませんでした。配置に戻って、もう一度お試しください。') })
     return () => { cancelled = true }
-  }, [cards, artwork, showWords])
+  }, [cards, artwork, guide, comparison, showWords])
 
   // Any edit makes the previously saved image stale.
   useEffect(() => { setSaved(null) }, [notes, preview])
@@ -84,7 +107,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   const focusedReaction: Reaction = focused ? reactions[focused.instanceId] ?? {} : {}
   // Today's lines: one for each card that got at least one tap, in the order they were placed.
   const todayLines = cards.filter(card => Object.keys(reactions[card.instanceId] ?? {}).length)
-    .map(card => hitokoto(card.word, placeOf(guide, card), reactions[card.instanceId]!))
+    .map(card => hitokoto(card.word, placeOf(guide, card, comparison), reactions[card.instanceId]!))
   const memo = notes.answers.memo ?? ''
 
   function react(key: ReactionKey, id: string) {
@@ -158,7 +181,7 @@ export default function Reflection({ cards, artwork, guide, theme, notes, onNote
   async function copyAiPrompt(kind: 'deep' | 'reading') {
     setCopyStatus('')
     try {
-      const prompt = kind === 'deep' ? makeDeepPrompt(cards, guide, theme) : makeReadingPrompt(cards, guide, theme)
+      const prompt = kind === 'deep' ? makeDeepPrompt(cards, guide, theme, comparison) : makeReadingPrompt(cards, guide, theme, comparison)
       await navigator.clipboard.writeText(prompt)
       setCopyStatus(kind === 'deep'
         ? '「AIと一緒に言葉を探す」の文章をコピーしました。'

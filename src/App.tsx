@@ -10,8 +10,8 @@ import MandalaMaker, { emptyMaker } from './MandalaMaker'
 import type { Maker } from './MandalaMaker'
 import type { Preset } from './omakase'
 import type { PlacedCard } from './MandalaField'
-import { GUIDES, THEMES, emptyNotes } from './guide'
-import type { Guide, Notes, Theme } from './guide'
+import { GUIDES, THEMES, emptyComparison, emptyNotes, normalizeComparison } from './guide'
+import type { Comparison, Guide, Notes, Theme } from './guide'
 import CreatorRoom from './CreatorRoom'
 
 const artwork = `${import.meta.env.BASE_URL}assets/field-mandala.svg`
@@ -24,7 +24,7 @@ const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflectio
 const DRAFT_KEY = 'mandala-palette:draft'
 interface Draft {
   screen: Screen; themeId: string | null; guide: Guide; cards: PlacedCard[]; picked: string[]
-  open: string[]; notes: Notes; showWords: boolean; maker: Maker
+  open: string[]; notes: Notes; showWords: boolean; maker: Maker; comparison: Comparison
 }
 function loadDraft(): Partial<Draft> {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) ?? '{}') as Partial<Draft> } catch { return {} }
@@ -60,6 +60,7 @@ export default function App() {
   }
   const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
   const [guide, setGuide] = useState<Guide>(GUIDES.includes(draft.guide as Guide) ? draft.guide! : 'triangle')
+  const [comparison, setComparison] = useState<Comparison>(() => normalizeComparison(draft.comparison))
   const [notes, setNotes] = useState<Notes>(draft.notes ?? emptyNotes())
   const [showWords, setShowWords] = useState(draft.showWords ?? true)
   const [cards, setCards] = useState<PlacedCard[]>(draft.cards ?? [])
@@ -87,9 +88,9 @@ export default function App() {
   useEffect(() => {
     const savedScreen = screen === 'creator' ? resumeScreen ?? 'home' : screen === 'home' ? resumeScreen ?? 'home' : screen
     const saved: Draft = { screen: savedScreen, themeId: theme?.id ?? null,
-      guide, cards, picked, open, notes, showWords, maker }
+      guide, cards, picked, open, notes, showWords, maker, comparison }
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
-  }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker])
+  }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker, comparison])
 
   const hasProgress = cards.length > 0 || picked.length > 0 || hasNotes(notes)
 
@@ -104,6 +105,7 @@ export default function App() {
     setNotes(emptyNotes())
     setTheme(null)
     setGuide('triangle')
+    setComparison(emptyComparison())
     setShowWords(true)
     setConfirmFresh(false)
     setResumeScreen(null)
@@ -138,9 +140,9 @@ export default function App() {
           前回のつづきから<span aria-hidden="true">→</span>
         </button>} />
       : screen === 'creator' ? <CreatorRoom onHome={goHome} />
-      : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
+      : screen === 'reflection' ? <Reflection cards={cards} artwork={artwork} guide={guide} comparison={comparison} theme={theme} notes={notes} onNotes={setNotes} showWords={showWords} onShowWords={setShowWords} onBack={() => setScreen('field')} onHome={goHome}
         onMake={() => { setPresets(presetsFrom(cards)); setMaker(emptyMaker()); setScreen('make') }} /> : screen === 'make'
-        ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
+        ? <MandalaMaker maker={maker} onMaker={setMaker} presets={presets} heading={heading} onHome={goHome} /> : screen === 'field' ? <MandalaField guide={guide} onGuide={setGuide} comparison={comparison} onComparison={setComparison} theme={theme} onComplete={() => setScreen('reflection')} artwork={artwork} cards={cards} setCards={setCards} onAdd={() => setScreen('pick')} /> : screen === 'theme' ? <section className="selection" aria-labelledby="theme-title">
         <nav className="selection-nav" aria-label="画面の移動">
           <button className="back-button" type="button" onClick={() => setScreen(cards.length ? 'field' : 'home')}>
             ← {cards.length ? '配置に戻る' : 'トップへ戻る'}

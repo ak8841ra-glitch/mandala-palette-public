@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction, PointerEvent } from 'react'
 import type { Keyword } from './palette'
-import { GUIDES, GUIDE_TEXT, TRIANGLE_SPOTS } from './guide'
-import type { Guide, Theme } from './guide'
+import { GUIDES, GUIDE_TEXT, TRIANGLE_SPOTS, comparisonAngles, normalizeComparison } from './guide'
+import type { Comparison, Guide, Theme } from './guide'
 import Steps from './Steps'
 
 export interface PlacedCard extends Keyword {
@@ -20,7 +20,7 @@ const sizes = { small: { label: '小', diameter: .20 }, medium: { label: '中', 
 const clamp = (value: number) => Math.max(.18, Math.min(.82, value))
 
 // Placement guides are hints drawn over the field, never part of the saved artwork.
-function FieldGuide({ guide }: { guide: Guide }) {
+function FieldGuide({ guide, comparison }: { guide: Guide; comparison: Comparison }) {
   if (guide === 'none') return null
   if (guide === 'triangle') return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
     {TRIANGLE_SPOTS.map(spot => <g key={spot.number}>
@@ -32,6 +32,25 @@ function FieldGuide({ guide }: { guide: Guide }) {
     <path d="M8 50 H92 M89 48 L92 50 L89 52" />
     <text x="20" y="44">過去</text><text x="50" y="44">現在</text><text x="80" y="44">未来</text>
   </svg>
+  if (guide === 'compare') {
+    const geometry = comparisonAngles(comparison.count)
+    const point = (angle: number, radius: number) => ({ x: 50 + Math.cos(angle) * radius, y: 50 + Math.sin(angle) * radius })
+    return <svg className="field-guide comparison-guide" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="14" />
+      {geometry.boundaries.map((angle, index) => {
+        const inner = point(angle, 14), outer = point(angle, 47)
+        return <line key={`line-${index}`} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} />
+      })}
+      {geometry.centers.map((angle, index) => {
+        const label = point(angle, 40)
+        return <text key={`label-${index}`} x={label.x} y={label.y}
+          style={{ fontSize: comparison.count > 8 ? '2.25px' : comparison.count > 5 ? '2.7px' : '3.2px' }}>
+          {(comparison.labels[index]?.trim() || String(index + 1)).slice(0, 10)}
+        </text>
+      })}
+      <text x="50" y="50">共通</text>
+    </svg>
+  }
   return <svg className="field-guide" viewBox="0 0 100 100" aria-hidden="true">
     {[14, 28, 42].map(r => <circle key={r} cx="50" cy="50" r={r} />)}
     <text x="50" y="51.5">内側</text>
@@ -39,9 +58,11 @@ function FieldGuide({ guide }: { guide: Guide }) {
   </svg>
 }
 
-export default function MandalaField({ cards, setCards, onAdd, artwork, onComplete, guide, onGuide, theme }: {
+export default function MandalaField({ cards, setCards, onAdd, artwork, onComplete, guide, onGuide, comparison, onComparison, theme }: {
   guide: Guide
   onGuide: (guide: Guide) => void
+  comparison: Comparison
+  onComparison: (comparison: Comparison) => void
   theme: Theme | null
   onComplete: () => void
   artwork: string
@@ -123,9 +144,31 @@ export default function MandalaField({ cards, setCards, onAdd, artwork, onComple
       </button>}
     </div>
     <p className="lead" id="field-help">{GUIDE_TEXT[guide].lead}</p>
+    {guide === 'compare' && <div className="comparison-settings" aria-label="比較する領域の設定">
+      <div className="comparison-count">
+        <span>分ける数</span>
+        <button type="button" aria-label="分割数を1つ減らす" disabled={comparison.count <= 2}
+          onClick={() => onComparison(normalizeComparison({ ...comparison, count: comparison.count - 1 }))}>−</button>
+        <strong aria-live="polite">{comparison.count}</strong>
+        <button type="button" aria-label="分割数を1つ増やす" disabled={comparison.count >= 12}
+          onClick={() => onComparison(normalizeComparison({ ...comparison, count: comparison.count + 1 }))}>＋</button>
+      </div>
+      <div className="comparison-labels">
+        {Array.from({ length: comparison.count }, (_, index) => <label key={index}>
+          <span>{index + 1}</span>
+          <input value={comparison.labels[index] ?? ''} maxLength={20} placeholder={`領域${index + 1}の名前`}
+            onChange={event => {
+              const labels = [...comparison.labels]
+              labels[index] = event.target.value
+              onComparison({ ...comparison, labels })
+            }} />
+        </label>)}
+      </div>
+      <p>中央は、みんなに共通して感じるものを置く場所です。</p>
+    </div>}
     <div ref={field} className="mandala-field" role="group" aria-label="曼荼羅フィールド" aria-describedby="field-help">
       <img className="field-art" src={artwork} alt="" draggable={false} />
-      <FieldGuide guide={guide} />
+      <FieldGuide guide={guide} comparison={comparison} />
       {cards.map(card => <button key={card.instanceId} id={`card-${card.instanceId}`} type="button" className="placed-card"
         aria-pressed={selectedId === card.instanceId}
         aria-label={`${card.word}（${card.colorName}・${cards.indexOf(card) + 1}枚目）を移動`}

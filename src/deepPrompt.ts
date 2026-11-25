@@ -1,6 +1,6 @@
 import type { PlacedCard } from './MandalaField'
-import { placeOf } from './guide'
-import type { Guide, Theme } from './guide'
+import { emptyComparison, placeOf } from './guide'
+import type { Comparison, Guide, Theme } from './guide'
 
 const diameter = { small: .20, medium: .28, large: .36 } as const
 const sizeLabel = { small: '小', medium: '中', large: '大' } as const
@@ -20,11 +20,11 @@ function overlaps(a: PlacedCard, b: PlacedCard) {
   return Math.hypot(a.x - b.x, a.y - b.y) < ar + br
 }
 
-function promptContext(cards: PlacedCard[], guide: Guide, theme: Theme | null) {
+function promptContext(cards: PlacedCard[], guide: Guide, theme: Theme | null, comparison: Comparison) {
   const ordered = [...cards].sort((a, b) => a.z - b.z)
   const selections = ordered.map((card, index) => {
     const size = card.size ?? 'medium'
-    const guidePlace = placeOf(guide, card)
+    const guidePlace = placeOf(guide, card, comparison)
     const position = roughPosition(card.x, card.y)
     return `${index + 1}. ${card.colorName}「${card.word}」：大きさ${sizeLabel[size]}、${position}${guidePlace ? `（ガイド上では「${guidePlace}」）` : ''}`
   })
@@ -33,11 +33,16 @@ function promptContext(cards: PlacedCard[], guide: Guide, theme: Theme | null) {
     if (overlaps(card, other)) pairs.push(`・「${card.word}」と「${other.word}」が重なっています。`)
   }))
   const themeText = theme && theme.id !== 'free' ? theme.label : 'テーマを決めず自由に作成'
+  const comparisonText = guide === 'compare' ? `
+
+【比較する領域】
+${comparison.labels.map((label, index) => `${index + 1}. ${label.trim() || `領域${index + 1}`}`).join('\n')}
+中央は「共通」の領域です。` : ''
 
   return `以下は、曼荼羅paletteで私が選び、配置した内容です。
 
 【テーマ】
-${themeText}
+${themeText}${comparisonText}
 
 【選んだ色・言葉・配置】
 ${selections.join('\n')}
@@ -50,8 +55,8 @@ ${pairs.length ? pairs.join('\n') : '・重なっている円はありません�
 `
 }
 
-export function makeDeepPrompt(cards: PlacedCard[], guide: Guide, theme: Theme | null) {
-  return `${promptContext(cards, guide, theme)}
+export function makeDeepPrompt(cards: PlacedCard[], guide: Guide, theme: Theme | null, comparison = emptyComparison()) {
+  return `${promptContext(cards, guide, theme, comparison)}
 
 以下の理念を共有するカラーセラピストとして、色と言葉を扱ってください。
 
@@ -72,8 +77,8 @@ export function makeDeepPrompt(cards: PlacedCard[], guide: Guide, theme: Theme |
 まとめや記録は、ユーザーが求めたときだけ行ってください。`
 }
 
-export function makeReadingPrompt(cards: PlacedCard[], guide: Guide, theme: Theme | null) {
-  return `${promptContext(cards, guide, theme)}
+export function makeReadingPrompt(cards: PlacedCard[], guide: Guide, theme: Theme | null, comparison = emptyComparison()) {
+  return `${promptContext(cards, guide, theme, comparison)}
 
 この曼荼羅を、色・言葉・配置から自由に読み解いてください。
 
