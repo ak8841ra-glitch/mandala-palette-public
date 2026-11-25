@@ -372,13 +372,9 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .creator-gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .creator-gallery figure { margin: 0; padding: 7px; background: var(--surface); border: 1px solid var(--line); }
 .creator-gallery img { width: 100%; aspect-ratio: 1; object-fit: contain; }
-.digital-gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: dense; gap: 12px; }
-.digital-gallery figure { min-height: 0; margin: 0; padding: 7px; border: 1px solid var(--line); background: var(--surface); }
-.digital-gallery img { display: block; width: 100%; height: 100%; aspect-ratio: 1; object-fit: contain; }
-.digital-gallery .digital-art--portrait { grid-row: span 2; }
-.digital-gallery .digital-art--portrait img { aspect-ratio: 9 / 16; }
-.digital-gallery .digital-art--wide { grid-column: span 2; }
-.digital-gallery .digital-art--wide img { aspect-ratio: 2 / 1; }
+.digital-gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.digital-gallery figure { margin: 0; padding: 7px; aspect-ratio: 1; border: 1px solid var(--line); background: var(--surface); }
+.digital-gallery img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .creator-shop { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(260px, .95fr); align-items: center; gap: clamp(24px, 5vw, 56px); margin-top: clamp(42px, 7vw, 72px); padding: clamp(22px, 4vw, 42px); border: 1px solid var(--line); background: var(--surface); }
 .creator-shop-preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .creator-shop-preview img { width: 100%; aspect-ratio: 1; padding: 4%; background: #F5F1EA; object-fit: contain; }
@@ -405,8 +401,6 @@ a { color: var(--ink); text-underline-offset: 3px; }
 }
 @media (max-width: 720px) {
   .creator-gallery, .digital-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .digital-gallery .digital-art--portrait { grid-row: auto; }
-  .digital-gallery .digital-art--portrait img { aspect-ratio: 9 / 16; }
   .creator-shop { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) { .creator-section { padding: 64px 0; } }
