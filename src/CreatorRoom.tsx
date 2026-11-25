@@ -49,6 +49,14 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
     <section className="creator-section" aria-labelledby="digital-gallery-title">
       <div className="exhibit-heading"><p>DIGITAL MANDALA ART</p><h2 id="digital-gallery-title">デジタル曼荼羅アート作品</h2></div>
       <div className="digital-gallery">{digitalArt.map(art => <figure key={art.src} className={art.className ?? ''}><img src={art.src} alt={art.alt} loading="lazy" /></figure>)}</div>
+      <aside className="creator-shop" aria-labelledby="creator-shop-title">
+        <div className="creator-shop-preview" aria-hidden="true">
+          <img src={`${base}creator/digital-floral.jpg`} alt="" loading="lazy" />
+          <img src={`${base}creator/digital-rainbow.jpg`} alt="" loading="lazy" />
+          <img src={`${base}creator/digital-pink-pattern.jpg`} alt="" loading="lazy" />
+        </div>
+        <div><p className="section-kicker">MANDALA GOODS</p><h3 id="creator-shop-title">曼荼羅を、日常の中にも。</h3><p>デジタル曼荼羅を使ったオリジナルグッズを、SUZURIで販売しています。</p><a className="button-primary" href="https://suzuri.jp/asuka_884" target="_blank" rel="noreferrer">SUZURIでグッズを見る</a></div>
+      </aside>
     </section>
     <section className="creator-section" aria-labelledby="other-works-title">
       <div className="exhibit-heading"><p>OTHER WORKS</p><h2 id="other-works-title">ほかにつくったもの</h2></div>
