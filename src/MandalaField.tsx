@@ -55,9 +55,9 @@ function ComparisonLabels({ comparison }: { comparison: Comparison }) {
   const geometry = comparisonAngles(comparison.count)
   return <div className="comparison-field-labels" aria-hidden="true">
     {geometry.centers.map((angle, index) => <span key={index} style={{
-      left: `${50 + Math.cos(angle) * 40}%`, top: `${50 + Math.sin(angle) * 40}%`
+      left: `${50 + Math.cos(angle) * 47}%`, top: `${50 + Math.sin(angle) * 47}%`
     }}>{(comparison.labels[index]?.trim() || String(index + 1)).slice(0, 12)}</span>)}
-    <span className="comparison-common-label" style={{ left: '50%', top: '50%' }}>共通</span>
+    <span className="comparison-common-label" style={{ left: '50%', top: '38%' }}>共通</span>
   </div>
 }
 

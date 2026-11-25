@@ -34,7 +34,7 @@ function wordsAt(cards: PlacedCard[], spot: typeof TRIANGLE_SPOTS[number]) {
 }
 
 function drawComparisonGuide(ctx: CanvasRenderingContext2D, comparison: Comparison, labelsOnly = false) {
-  const center = 600, inner = 168, outer = 564, labelRadius = 478
+  const center = 600, inner = 168, outer = 564, labelRadius = 564
   const geometry = comparisonAngles(comparison.count)
   ctx.save()
   if (!labelsOnly) {
@@ -60,8 +60,9 @@ function drawComparisonGuide(ctx: CanvasRenderingContext2D, comparison: Comparis
   })
   ctx.font = `24px ${font}`
   const commonWidth = ctx.measureText('共通').width + 26
-  ctx.fillStyle = '#FFFDF8E8'; ctx.beginPath(); ctx.roundRect(center - commonWidth / 2, center - 19, commonWidth, 38, 19); ctx.fill()
-  ctx.fillStyle = INK_SOFT; ctx.fillText('共通', center, center)
+  const commonY = center - inner + 24
+  ctx.fillStyle = '#FFFDF8E8'; ctx.beginPath(); ctx.roundRect(center - commonWidth / 2, commonY - 19, commonWidth, 38, 19); ctx.fill()
+  ctx.fillStyle = INK_SOFT; ctx.fillText('共通', center, commonY)
   ctx.restore()
 }
 
