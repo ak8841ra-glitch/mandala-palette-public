@@ -51,9 +51,9 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
       <div className="digital-gallery">{digitalArt.map(art => <figure key={art.src} className={art.className ?? ''}><img src={art.src} alt={art.alt} loading="lazy" /></figure>)}</div>
       <aside className="creator-shop" aria-labelledby="creator-shop-title">
         <div className="creator-shop-preview" aria-hidden="true">
-          <img src={`${base}creator/digital-floral.jpg`} alt="" loading="lazy" />
-          <img src={`${base}creator/digital-rainbow.jpg`} alt="" loading="lazy" />
-          <img src={`${base}creator/digital-pink-pattern.jpg`} alt="" loading="lazy" />
+          <img src={`${base}creator/goods-masking-tape.png`} alt="" loading="lazy" />
+          <img src={`${base}creator/goods-phone-case.png`} alt="" loading="lazy" />
+          <img src={`${base}creator/goods-cloth.png`} alt="" loading="lazy" />
         </div>
         <div><p className="section-kicker">MANDALA GOODS</p><h3 id="creator-shop-title">曼荼羅を、日常の中にも。</h3><p>デジタル曼荼羅を使ったオリジナルグッズを、SUZURIで販売しています。</p><a className="button-primary" href="https://suzuri.jp/asuka_884" target="_blank" rel="noreferrer">SUZURIでグッズを見る</a></div>
       </aside>
