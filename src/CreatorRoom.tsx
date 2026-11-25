@@ -14,6 +14,13 @@ const galleryArt: Record<GalleryKey, { name: string; src: string; alt: string; c
   pink: { name: '桃', src: `${base}creator/art-pink.jpg`, alt: '布バッグに桃色で描いた手描きの曼荼羅', caption: '日常に持ち歩けるよう描いた作品' },
   green: { name: '緑', src: `${base}creator/art-green.jpg`, alt: '緑の紙に白と黒で描いた手描きの曼荼羅', caption: '緑の濃淡と細い線を重ねた作品' },
 }
+const digitalArt = [
+  { src: `${base}creator/digital-blue-lotus.jpg`, alt: '深い青の背景に、青と桃色と金色で描いた蓮のデジタル曼荼羅', className: 'digital-art--portrait' },
+  { src: `${base}creator/digital-floral.jpg`, alt: '淡い背景に、紺と桃色の花を細やかに描いたデジタル曼荼羅' },
+  { src: `${base}creator/digital-monochrome.jpg`, alt: '黒い背景に白い線で大小の曼荼羅を組み合わせたデジタル作品' },
+  { src: `${base}creator/digital-rainbow.jpg`, alt: '黒い背景に虹色の細い線を幾重にも重ねたデジタル曼荼羅' },
+  { src: `${base}creator/digital-pink-pattern.jpg`, alt: '桃色と紫の背景に白い曼荼羅を繰り返したデジタルパターン', className: 'digital-art--wide' },
+]
 
 export default function CreatorRoom({ onHome }: { onHome: () => void }) {
   const [color, setColor] = useState<MoodKey>('pink')
@@ -38,6 +45,10 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
     <section className="creator-section" aria-labelledby="art-gallery-title">
       <div className="exhibit-heading"><p>HAND-DRAWN MANDALA ART</p><h2 id="art-gallery-title">手描き曼荼羅アート作品</h2></div>
       <div className="creator-gallery">{(Object.keys(galleryArt) as GalleryKey[]).map(key => <figure key={key}><img src={galleryArt[key].src} alt={galleryArt[key].alt} /></figure>)}</div>
+    </section>
+    <section className="creator-section" aria-labelledby="digital-gallery-title">
+      <div className="exhibit-heading"><p>DIGITAL MANDALA ART</p><h2 id="digital-gallery-title">デジタル曼荼羅アート作品</h2></div>
+      <div className="digital-gallery">{digitalArt.map(art => <figure key={art.src} className={art.className ?? ''}><img src={art.src} alt={art.alt} loading="lazy" /></figure>)}</div>
     </section>
     <section className="creator-section" aria-labelledby="other-works-title">
       <div className="exhibit-heading"><p>OTHER WORKS</p><h2 id="other-works-title">ほかにつくったもの</h2></div>
