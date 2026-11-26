@@ -23,7 +23,7 @@ const SCREENS: readonly Screen[] = ['home', 'theme', 'pick', 'field', 'reflectio
 // The draft lives only in this browser, so an interrupted session can resume after a reload.
 const DRAFT_KEY = 'mandala-palette:draft'
 interface Draft {
-  screen: Screen; themeId: string | null; guide: Guide; cards: PlacedCard[]; picked: string[]
+  screen: Screen; themeId: string | null; themeLabel?: string; guide: Guide; cards: PlacedCard[]; picked: string[]
   open: string[]; notes: Notes; showWords: boolean; maker: Maker; comparison: Comparison
 }
 function loadDraft(): Partial<Draft> {
@@ -58,7 +58,9 @@ export default function App() {
     if (screen !== 'home' && screen !== 'creator') setResumeScreen(screen)
     setScreen('home')
   }
-  const [theme, setTheme] = useState<Theme | null>(THEMES.find(item => item.id === draft.themeId) ?? null)
+  const [theme, setTheme] = useState<Theme | null>(() => THEMES.find(item => item.id === draft.themeId)
+    ?? (draft.themeId === 'custom' && draft.themeLabel ? { id: 'custom', label: draft.themeLabel, prompt: `「${draft.themeLabel}」について思い浮かべて` } : null))
+  const [customTheme, setCustomTheme] = useState(theme?.id === 'custom' ? theme.label : '')
   const [guide, setGuide] = useState<Guide>(GUIDES.includes(draft.guide as Guide) ? draft.guide! : 'triangle')
   const [comparison, setComparison] = useState<Comparison>(() => normalizeComparison(draft.comparison))
   const [notes, setNotes] = useState<Notes>(draft.notes ?? emptyNotes())
@@ -87,7 +89,7 @@ export default function App() {
 
   useEffect(() => {
     const savedScreen = screen === 'creator' ? resumeScreen ?? 'home' : screen === 'home' ? resumeScreen ?? 'home' : screen
-    const saved: Draft = { screen: savedScreen, themeId: theme?.id ?? null,
+    const saved: Draft = { screen: savedScreen, themeId: theme?.id ?? null, themeLabel: theme?.id === 'custom' ? theme.label : undefined,
       guide, cards, picked, open, notes, showWords, maker, comparison }
     try { localStorage.setItem(DRAFT_KEY, JSON.stringify(saved)) } catch { /* storage may be unavailable; the app still works */ }
   }, [screen, resumeScreen, theme, guide, cards, picked, open, notes, showWords, maker, comparison])
@@ -104,12 +106,21 @@ export default function App() {
     setOpen([])
     setNotes(emptyNotes())
     setTheme(null)
+    setCustomTheme('')
     setGuide('triangle')
     setComparison(emptyComparison())
     setShowWords(true)
     setConfirmFresh(false)
     setResumeScreen(null)
     setScreen('theme')
+  }
+
+  function chooseCustomTheme() {
+    const label = customTheme.trim().replace(/\s+/g, ' ')
+    if (!label) return
+    setCustomTheme(label)
+    setTheme({ id: 'custom', label, prompt: `「${label}」について思い浮かべて` })
+    setScreen(cards.length ? 'field' : 'pick')
   }
 
   function placePicked() {
@@ -157,6 +168,14 @@ export default function App() {
             {item.label}
           </button>)}
         </div>
+        <form className="custom-theme" onSubmit={(event) => { event.preventDefault(); chooseCustomTheme() }}>
+          <label htmlFor="custom-theme-input">ほかのテーマを自分で入力</label>
+          <div>
+            <input id="custom-theme-input" type="text" value={customTheme} maxLength={40}
+              placeholder="例：新しく始めたいこと" onChange={(event) => setCustomTheme(event.target.value)} />
+            <button type="submit" className="button-primary" disabled={!customTheme.trim()}>このテーマで眺める</button>
+          </div>
+        </form>
       </section> : <WordPicker heading={heading} theme={theme} picked={picked} onPicked={setPicked} open={open} onOpen={setOpen}
         backLabel={cards.length ? '配置に戻る' : 'テーマを選び直す'} onBack={() => setScreen(cards.length ? 'field' : 'theme')}
         wheel={logo} doneLabel={cards.length ? '追加する' : '並べる'} onDone={() => { placePicked(); setScreen('field') }} />}
