@@ -25,6 +25,22 @@
     <title>曼荼羅palette</title>
   </head>
   <body>
+    <script type="module">
+      if (location.hostname === 'ak8841ra-glitch.github.io' &&
+          location.pathname.startsWith('/mandala-palette-public/')) {
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        window.gtag('config', 'G-68PPKPB24X', {
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false
+        });
+        const tag = document.createElement('script');
+        tag.async = true;
+        tag.src = 'https://www.googletagmanager.com/gtag/js?id=G-68PPKPB24X';
+        document.head.appendChild(tag);
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

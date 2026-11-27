@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode, Ref } from 'react'
+import { recordRoomChoice } from './analytics'
 
 // The home screen as a museum floor map, drawn from above: you come in at the entrance,
 // the two open rooms stand side by side, and the corridor runs on to rooms still being built.
@@ -43,7 +44,10 @@ export default function Home({ heading, logo, tour, onEnter, onCreator, notice }
         {ROOMS.map((room, index) => {
           const shown = Math.floor((tick + index) / 2) % room.images.length
           return <li key={room.id}>
-            <button type="button" className="map-room" onClick={() => onEnter(room.id)}>
+            <button type="button" className="map-room" onClick={() => {
+              recordRoomChoice(room.id)
+              onEnter(room.id)
+            }}>
               <span className="map-view" aria-hidden="true">
                 {room.images.map((image, i) => <img key={image} className={i === shown ? 'is-shown' : ''} src={tour + image} alt="" draggable={false} />)}
               </span>
@@ -64,5 +68,6 @@ export default function Home({ heading, logo, tour, onEnter, onCreator, notice }
       </ul>
     </nav>
     <p className="hint home-note">無料・登録なし。入力した内容は、外部に送られません。</p>
+    <p className="hint home-note">訪問状況と入口の選択は Google Analytics で計測します。</p>
   </section>
 }
