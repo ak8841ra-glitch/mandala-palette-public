@@ -82,7 +82,7 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .map-entrance::after { content: ""; position: absolute; left: 50%; top: 0; height: 16px; border-left: var(--wall) dotted var(--ink-soft); }
 .map-rooms { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 32px 12px 20px; list-style: none; border: var(--wall) solid var(--ink); border-bottom: 0; border-radius: 6px 6px 0 0; }
 .map-rooms::before { content: ""; position: absolute; top: 16px; left: 25%; right: 25%; height: 16px; border: var(--wall) dotted var(--ink-soft); border-bottom: 0; }
-.map-room { position: relative; flex-direction: column; gap: 2px; width: 100%; min-height: 0; padding: 10px 8px 12px; border: var(--wall) solid var(--ink); border-radius: 4px; background: var(--surface); box-shadow: var(--shadow); white-space: normal; }
+.map-room { position: relative; display: grid; grid-template-rows: auto minmax(2.8em, auto) 1fr; align-content: start; gap: 4px; width: 100%; height: 100%; min-height: 0; padding: 10px 8px 12px; border: var(--wall) solid var(--ink); border-radius: 4px; background: var(--surface); box-shadow: var(--shadow); white-space: normal; }
 .map-room:hover { border-color: var(--ink); background: #FBF6EC; }
 .map-room:active { transform: translateY(1px); box-shadow: none; }
 /* The doorway: a gap in the room's top wall, where the path arrives. */
@@ -90,8 +90,12 @@ a { color: var(--ink); text-underline-offset: 3px; }
 .map-view { position: relative; display: block; width: 100%; aspect-ratio: 3 / 4; margin-bottom: 8px; overflow: hidden; border-radius: 2px; background: var(--bg); }
 .map-view img { position: absolute; inset: 0; width: 100%; height: 100%; padding: 6px; object-fit: contain; opacity: 0; transition: opacity .8s; }
 .map-view img.is-shown { opacity: 1; }
-.map-name { font-family: var(--font-display); font-size: clamp(14px, 3.8vw, 18px); line-height: 1.4; text-wrap: balance; }
-.map-room .map-label { line-height: 1.55; text-wrap: balance; }
+.map-name { font-family: var(--font-display); font-size: clamp(14px, 3.8vw, 18px); line-height: 1.4; }
+.map-room .map-label { align-self: start; font-size: 12px; line-height: 1.6; letter-spacing: 0; }
+@media (max-width: 360px) {
+  .map-rooms { padding-inline: 8px; gap: 8px; }
+  .map-room { padding-inline: 4px; }
+}
 .map-label { font-size: 11px; letter-spacing: .08em; color: var(--ink-soft); }
 .map-coming { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 4px 12px 16px; list-style: none; border: var(--wall) dashed var(--line-strong); border-top: 0; border-radius: 0 0 6px 6px; }
 .map-coming li { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 64px; border: var(--wall) dashed var(--line-strong); border-radius: 4px; }

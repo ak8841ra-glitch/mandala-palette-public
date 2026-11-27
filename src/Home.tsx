@@ -7,11 +7,11 @@ import { recordRoomChoice } from './analytics'
 // Each open room shows its own screens through the doorway, so you can see what is inside before stepping in.
 
 export type RoomId = 'look' | 'make'
-interface Room { id: RoomId; description: string; name: string; images: readonly string[] }
+interface Room { id: RoomId; description: readonly [string, string]; name: readonly [string, string]; images: readonly string[] }
 // Screenshots of the real screens (public/assets/tour): the room's first screen, then its steps.
 const ROOMS: readonly Room[] = [
-  { id: 'look', name: '色と言葉で、今の気分を眺める', description: '気になる色を選んで、しっくりくる言葉を探す。', images: ['look-cover.jpg', 'look-1.jpg', 'look-2.jpg', 'look-3.jpg'] },
-  { id: 'make', name: '曼荼羅アートをつくる', description: '好きな色と模様を選んで、自分だけの一枚に。', images: ['make-cover.jpg', 'make-1.jpg', 'make-2.jpg', 'make-3.jpg'] },
+  { id: 'look', name: ['色と言葉で、', '今の気分を眺める'], description: ['気になる色を選んで、', 'しっくりくる言葉を探す。'], images: ['look-cover.jpg', 'look-1.jpg', 'look-2.jpg', 'look-3.jpg'] },
+  { id: 'make', name: ['曼荼羅アートを', 'つくる'], description: ['好きな色と模様を選んで、', '自分だけの一枚に。'], images: ['make-cover.jpg', 'make-1.jpg', 'make-2.jpg', 'make-3.jpg'] },
 ]
 // New areas are added here, past the open rooms.
 const COMING = ['ギャラリー'] as const
@@ -34,7 +34,11 @@ export default function Home({ heading, logo, tour, onEnter, onCreator, notice }
     <div className="hero">
       <img className="home-logo" src={logo} width="1000" height="1000" alt="" draggable={false} />
       <h1 ref={heading} tabIndex={-1} id="title" className="museum-title">曼荼羅palette</h1>
-      <p className="palette-philosophy">気になる色を選び、今の自分を眺める。自分だけの曼荼羅アートをつくる。あなたの感覚や気持ちを大切にする場所。</p>
+      <p className="palette-philosophy">
+        気になる色を選び、今の自分を眺める。<br />
+        自分だけの曼荼羅アートをつくる。<br />
+        あなたの感覚や気持ちを大切にする場所。
+      </p>
     </div>
     {notice}
 
@@ -51,8 +55,8 @@ export default function Home({ heading, logo, tour, onEnter, onCreator, notice }
               <span className="map-view" aria-hidden="true">
                 {room.images.map((image, i) => <img key={image} className={i === shown ? 'is-shown' : ''} src={tour + image} alt="" draggable={false} />)}
               </span>
-              <span className="map-name">{room.name}</span>
-              <span className="map-label">{room.description}</span>
+              <span className="map-name">{room.name[0]}<br />{room.name[1]}</span>
+              <span className="map-label">{room.description[0]}<br />{room.description[1]}</span>
             </button>
           </li>
         })}
