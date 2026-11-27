@@ -39,7 +39,12 @@ export default function CreatorRoom({ onHome }: { onHome: () => void }) {
     </header>
     <section className="creator-section" aria-labelledby="main-work-title">
       <div className="exhibit-heading"><p>MAIN WORK</p><h2 id="main-work-title">曼荼羅palette</h2></div>
-      <div className="main-work-grid"><img src={`${base}creator/mandala-palette-intro.png`} alt="スマートフォンで曼荼羅paletteを使う様子とアプリ画面" /><div><h3>答えを決めつけない、自己整理の時間</h3><p>色と言葉を入り口に、自分の気持ちを見つめ、原画のパーツを組み合わせて自分だけの曼荼羅をつくるWebアプリです。</p><dl><div><dt>つくったもの</dt><dd>色と言葉を選んで眺める部屋と、自由に曼荼羅をつくるアトリエ</dd></div><div><dt>工夫したこと</dt><dd>気持ちを断定せず、迷わず進められる言葉と画面の流れ</dd></div></dl><button type="button" className="button-primary" onClick={onHome}>曼荼羅paletteをひらく</button></div></div>
+      <div className="main-work-grid">
+        <figure className="main-work-preview">
+          <img src={`${base}creator/mandala-palette-poster.png`} alt="曼荼羅paletteのポスター。今の自分を、色で眺める。色を選び、言葉を選び、そっと置いて、曼荼羅になる。" width="1080" height="1350" loading="lazy" />
+        </figure>
+        <div><h3>答えを決めつけない、自己整理の時間</h3><p>色と言葉を入り口に、自分の気持ちを見つめ、原画のパーツを組み合わせて自分だけの曼荼羅をつくるWebアプリです。</p><dl><div><dt>つくったもの</dt><dd>色と言葉を選んで眺める部屋と、自由に曼荼羅をつくるアトリエ</dd></div><div><dt>工夫したこと</dt><dd>気持ちを断定せず、迷わず進められる言葉と画面の流れ</dd></div></dl><button type="button" className="button-primary" onClick={onHome}>曼荼羅paletteをひらく</button></div>
+      </div>
     </section>
     <section className="creator-section" aria-labelledby="art-gallery-title">
       <div className="exhibit-heading"><p>HAND-DRAWN MANDALA ART</p><h2 id="art-gallery-title">手描き曼荼羅アート作品</h2></div>
